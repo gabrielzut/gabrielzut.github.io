@@ -44,6 +44,13 @@ body {
     background-size: 2px 2px;
     background-color: rgba(140, 140, 140, 0.4); }
 
+.panel {
+  background-color: #d6d3a7;
+  border-left: 0.3rem solid #c7c7c7;
+  border-top: 0.3rem solid #c7c7c7;
+  border-right: 0.3rem solid #7b7b7b;
+  border-bottom: 0.3rem solid #7b7b7b; }
+
 .header {
   width: 100vw;
   height: 100vh;
@@ -153,11 +160,6 @@ body {
       position: absolute;
       height: 30rem;
       width: 30rem;
-      background-color: #d6d3a7;
-      border-left: 0.3rem solid #c7c7c7;
-      border-top: 0.3rem solid #c7c7c7;
-      border-right: 0.3rem solid #7b7b7b;
-      border-bottom: 0.3rem solid #7b7b7b;
       display: none; }
     .desktop .taskbar__start-menu-button {
       padding: 1rem;
@@ -176,3 +178,17 @@ body {
         margin: 0 0.4rem; }
       .desktop .taskbar__options__clock {
         font-size: 18px; }
+  .desktop .under-construction {
+    display: flex;
+    justify-content: center;
+    align-items: center; }
+    .desktop .under-construction .panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 15rem;
+      height: 10rem; }
+      @media only screen and (max-width: 56.25em) {
+        .desktop .under-construction .panel {
+          font-size: 1.5rem; } }

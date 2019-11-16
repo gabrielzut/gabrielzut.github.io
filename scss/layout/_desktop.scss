@@ -89,12 +89,6 @@
              position: absolute;
              height: 30rem;
              width: 30rem;
-             background-color: rgba(214,211,167,1);
-             border-left: 0.3rem solid $button_light;
-             border-top: 0.3rem solid $button_light;
-             border-right: 0.3rem solid $button_shadow;
-             border-bottom: 0.3rem solid $button_shadow;
-
              display: none;
          }
 
@@ -120,6 +114,25 @@
 
             &__clock {
                 font-size: 18px;
+            }
+        }
+    }
+
+    .under-construction {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .panel {
+            display: flex;
+            flex-direction: column;    
+            align-items: center;
+            justify-content: center;
+            width: 15rem;
+            height: 10rem;
+
+            @include media-query(sm) {
+                font-size: 1.5rem;
             }
         }
     }
