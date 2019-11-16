@@ -1,0 +1,1 @@
+This website is meant to be my curriculum. You're free to take inspiration and to study and reuse small portions of it's source as long as you credit it's author in the source code or compiled binary with a link to this repo.

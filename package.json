@@ -1,0 +1,23 @@
+{
+  "name": "zutiweb",
+  "version": "1.0.0",
+  "description": "Personal website",
+  "main": "index.js",
+  "scripts": {
+    "start": "live-server",
+    "compile-sass": "node-sass scss/main.scss css/style.css -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabrielzut/zutiweb.git"
+  },
+  "author": "Gabriel Augusto Zutião",
+  "license": "SEE LICENSE IN LICENSE.TXT",
+  "bugs": {
+    "url": "https://github.com/gabrielzut/zutiweb/issues"
+  },
+  "homepage": "https://github.com/gabrielzut/zutiweb#readme",
+  "devDependencies": {
+    "node-sass": "^4.13.0"
+  }
+}

@@ -1,0 +1,177 @@
+*, *::after, *::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: inherit; }
+
+html {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  font-size: 75%; }
+  @media only screen and (min-width: 106.25em) {
+    html {
+      font-size: 80%; } }
+  @media only screen and (max-width: 75em) {
+    html {
+      font-size: 70%; } }
+  @media only screen and (max-width: 56.25em) {
+    html {
+      font-size: 60%; } }
+  @media only screen and (max-width: 37.5em) {
+    html {
+      font-size: 50%; } }
+
+body {
+  width: 100%;
+  box-sizing: border-box; }
+
+.section {
+  scroll-snap-align: start; }
+
+body {
+  font-family: 'Jomolhari', sans-serif; }
+
+.button {
+  border-left: 0.3rem solid #c7c7c7;
+  border-top: 0.3rem solid #c7c7c7;
+  border-right: 0.3rem solid #7b7b7b;
+  border-bottom: 0.3rem solid #7b7b7b; }
+  .button:active {
+    border-right: 0.3rem solid #c7c7c7;
+    border-bottom: 0.3rem solid #c7c7c7;
+    border-left: 0.3rem solid #7b7b7b;
+    border-top: 0.3rem solid #7b7b7b;
+    background-size: 2px 2px;
+    background-color: rgba(140, 140, 140, 0.4); }
+
+.header {
+  width: 100vw;
+  height: 100vh;
+  background-image: url("../../assets/checkered-bg.svg");
+  background-repeat: repeat;
+  background-size: 10rem 10rem;
+  z-index: -40; }
+  .header__foreground {
+    width: 100%;
+    height: 100vh;
+    background-image: url("../../assets/90s-abstract-bg.gif");
+    background-size: auto 100vh;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: -20; }
+    @media only screen and (max-width: 56.25em) {
+      .header__foreground {
+        background-size: auto 80vh; } }
+  .header__title {
+    text-align: center;
+    font-size: 10rem;
+    background: linear-gradient(orange, orangered);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 200;
+    position: relative;
+    filter: drop-shadow(0.2rem 0.2rem black);
+    transform: skewX(-15deg); }
+    @media only screen and (max-width: 56.25em) {
+      .header__title {
+        font-size: 6rem; } }
+    .header__title span {
+      font-weight: 700; }
+
+.desktop {
+  padding-top: 1rem;
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  background: #00241f;
+  background: linear-gradient(0deg, #00241f 0%, #095379 100%); }
+  .desktop__icon-grid {
+    padding-left: 1rem;
+    display: grid;
+    grid-template-columns: 6rem;
+    grid-template-rows: repeat(3, 6rem);
+    grid-row-gap: 0.5rem; }
+    @media only screen and (max-width: 75em) {
+      .desktop__icon-grid {
+        grid-row-gap: 0.7rem;
+        grid-template-columns: 7rem;
+        grid-template-rows: repeat(3, 7rem); } }
+    @media only screen and (max-width: 56.25em) {
+      .desktop__icon-grid {
+        grid-row-gap: 0.9rem;
+        grid-template-columns: 8rem;
+        grid-template-rows: repeat(3, 8rem); } }
+    @media only screen and (max-width: 37.5em) {
+      .desktop__icon-grid {
+        grid-row-gap: 1.2rem;
+        grid-template-columns: 9rem;
+        grid-template-rows: repeat(3, 9rem); } }
+    .desktop__icon-grid .shortcut {
+      user-select: none;
+      font-size: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center; }
+      .desktop__icon-grid .shortcut img {
+        margin-bottom: 0.3rem; }
+      .desktop__icon-grid .shortcut span {
+        background-color: black;
+        color: white;
+        padding: 0 0.2rem;
+        text-align: center; }
+      @media only screen and (max-width: 75em) {
+        .desktop__icon-grid .shortcut {
+          font-size: 1.3rem; } }
+      @media only screen and (max-width: 56.25em) {
+        .desktop__icon-grid .shortcut {
+          font-size: 1.4rem; } }
+      @media only screen and (max-width: 37.5em) {
+        .desktop__icon-grid .shortcut {
+          font-size: 1.7rem; } }
+  .desktop .taskbar {
+    user-select: none;
+    padding: 0 0.5rem;
+    width: 100%;
+    height: 42px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    bottom: 0;
+    background: black;
+    background: linear-gradient(0deg, black 0%, #d6d3a7 3%, #d6d3a7 97%, #fefac7 100%); }
+    .desktop .taskbar input[type=checkbox] {
+      display: none; }
+      .desktop .taskbar input[type=checkbox]:checked ~ .start-menu {
+        display: block;
+        top: -30rem; }
+    .desktop .taskbar .start-menu {
+      position: absolute;
+      height: 30rem;
+      width: 30rem;
+      background-color: #d6d3a7;
+      border-left: 0.3rem solid #c7c7c7;
+      border-top: 0.3rem solid #c7c7c7;
+      border-right: 0.3rem solid #7b7b7b;
+      border-bottom: 0.3rem solid #7b7b7b;
+      display: none; }
+    .desktop .taskbar__start-menu-button {
+      padding: 1rem;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px; }
+    .desktop .taskbar__options {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-evenly;
+      align-items: center; }
+      .desktop .taskbar__options * {
+        margin: 0 0.4rem; }
+      .desktop .taskbar__options__clock {
+        font-size: 18px; }

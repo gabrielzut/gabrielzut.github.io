@@ -1,0 +1,16 @@
+.button {
+    border-left: 0.3rem solid $button_light;
+    border-top: 0.3rem solid $button_light;
+    border-right: 0.3rem solid $button_shadow;
+    border-bottom: 0.3rem solid $button_shadow;
+
+    &:active {
+        border-right: 0.3rem solid $button_light;
+        border-bottom: 0.3rem solid $button_light;
+        border-left: 0.3rem solid $button_shadow;
+        border-top: 0.3rem solid $button_shadow;
+
+        background-size: 2px 2px;
+        background-color: $button_clicked_color;
+    }
+}
