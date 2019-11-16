@@ -34,6 +34,7 @@
 
         background: linear-gradient(orange, orangered);
         background-clip: text;
+        -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 200;
         position: relative;
