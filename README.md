@@ -1,2 +1,0 @@
-# zutiweb
-Personal website
