@@ -29,14 +29,7 @@
 
     &__title {
         text-align: center;
-        font-size: 10rem;
-
-        @media only screen and (max-width: 56.25em) {
-            .header__title {
-                font-size: 6rem; 
-            }
-        }
-
+        font-size: 7rem;
         background: linear-gradient(orange, orangered);
         background-clip: text;
         -webkit-background-clip: text;
@@ -49,6 +42,28 @@
         span {
             font-weight: 700;
         }
+    }
+
+    @media only screen and (min-width: 106.25em) {
+        .header__title {
+            font-size: 8rem; 
+        } 
+    }
+
+    @media only screen and (max-width: 75em) {
+        .header__title {
+            font-size: 7rem; 
+        }
+    }
+    @media only screen and (max-width: 56.25em) {
+        .header__title {
+            font-size: 6rem;
+        }
+    }
+    @media only screen and (max-width: 37.5em) {
+        .header__title {
+            font-size: 5rem;
+        } 
     }
 }
 </style>
