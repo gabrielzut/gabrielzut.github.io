@@ -1,7 +1,8 @@
+<style type="text/scss">
 .header {
     width: 100vw;
     height: 100vh;
-    background-image: url("../../assets/checkered-bg.svg");
+    background-image: url("../../public/assets/checkered-bg.svg");
     background-repeat: repeat;
     background-size: 10rem 10rem ;
     z-index: -40;
@@ -9,11 +10,13 @@
     &__foreground {
         width: 100%;
         height: 100vh;
-        background-image: url("../../assets/90s-abstract-bg.gif");
+        background-image: url("../../public/assets/90s-abstract-bg.gif");
         background-size: auto 100vh;
 
-        @include media-query(sm) {
-            background-size: auto 80vh;
+        @media only screen and (max-width: 56.25em) {
+            .header__foreground {
+                background-size: auto 80vh; 
+            } 
         }
 
         background-repeat: no-repeat;
@@ -28,8 +31,10 @@
         text-align: center;
         font-size: 10rem;
 
-        @include media-query(sm) {
-            font-size: 6rem;
+        @media only screen and (max-width: 56.25em) {
+            .header__title {
+                font-size: 6rem; 
+            }
         }
 
         background: linear-gradient(orange, orangered);
@@ -46,3 +51,12 @@
         }
     }
 }
+</style>
+
+<div class="header section">
+    <div class="header__foreground">
+        <h1 class="header__title">
+            Welcome to<br> the <span>Zutiweb</span>
+        </h1>
+    </div>
+</div>
