@@ -1,0 +1,85 @@
+.link-list {
+  width: 50vw;
+  height: 80vh;
+  background-color: $darker_blue;
+  position: relative;
+
+  &__header-container {
+    position: absolute;
+    width: 100%;
+    user-select: none;
+    display: flex;
+    padding: 0.7rem;
+    color: white;
+
+    .title {
+      font-size: 2rem;
+      transform: skewX(-15deg);
+      font-weight: 700;
+      text-align: center;
+      width: 100%;
+    }
+
+    .close-button {
+      font-size: 1.3rem;
+      position: absolute;
+      right: 10px;
+      top: 5px;
+    }
+  }
+
+  .link-container {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    padding-top: 2rem;
+
+    .link {
+      width: 60%;
+      height: 6rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.7rem;
+      color: white;
+      box-shadow: 3px 3px 3px 3px rgba(0,0,0,0.74);
+      transition: box-shadow 0.2s cubic-bezier(0.77, 0, 0.175, 1);
+      cursor: pointer;
+      text-decoration: none;
+
+        &:hover {
+            box-shadow: 3px 3px 19px 3px rgba(0,0,0,0.74);
+        }
+
+      &:active {
+          box-shadow: none;
+      }
+
+      &.blog {
+        background-color: $blog;
+      }
+      &.photo-app {
+        background-color: $photo_app;
+      }
+      &.post-app {
+        background-color: $post-app;
+      }
+      &.stream-app {
+        background-color: $stream-app;
+      }
+      &.music-app {
+        background-color: $music-app;
+      }
+    }
+  }
+
+  @include media-query(xs) {
+    width: 90vw;
+  }
+
+  @include media-query(sm) {
+    width: 80vw;
+  }
+}
