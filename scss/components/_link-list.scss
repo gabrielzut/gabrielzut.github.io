@@ -44,17 +44,17 @@
       align-items: center;
       font-size: 1.7rem;
       color: white;
-      box-shadow: 3px 3px 3px 3px rgba(0,0,0,0.74);
+      box-shadow: 3px 3px 3px 3px rgba(0, 0, 0, 0.74);
       transition: box-shadow 0.2s cubic-bezier(0.77, 0, 0.175, 1);
       cursor: pointer;
       text-decoration: none;
 
-        &:hover {
-            box-shadow: 3px 3px 19px 3px rgba(0,0,0,0.74);
-        }
+      &:hover {
+        box-shadow: 3px 3px 19px 3px rgba(0, 0, 0, 0.74);
+      }
 
       &:active {
-          box-shadow: none;
+        box-shadow: none;
       }
 
       &.blog {
@@ -71,6 +71,9 @@
       }
       &.music-app {
         background-color: $music-app;
+      }
+      &.question-app {
+        background-color: $question-app;
       }
     }
   }
