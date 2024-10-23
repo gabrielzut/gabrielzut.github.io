@@ -1,23 +1,52 @@
 {
-  "name": "zutiweb",
-  "version": "1.0.0",
-  "description": "Personal website",
-  "main": "index.js",
+  "name": "gabrielzut.github.io",
+  "version": "0.1.0",
+  "homepage": "https://gabrielzut.github.io",
+  "private": false,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.115",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
+  },
   "scripts": {
-    "start": "live-server",
-    "compile-sass": "node-sass scss/main.scss css/style.css -w"
+    "start": "react-scripts start",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    "sass": "sass scss/main.scss public/css/style.css -w",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gabrielzut/zutiweb.git"
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
-  "author": "Gabriel Augusto Zutião",
-  "license": "SEE LICENSE IN LICENSE.TXT",
-  "bugs": {
-    "url": "https://github.com/gabrielzut/zutiweb/issues"
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
-  "homepage": "https://github.com/gabrielzut/zutiweb#readme",
   "devDependencies": {
-    "node-sass": "^9.0.0"
+    "gh-pages": "^6.2.0",
+    "pre-commit": "^1.2.2",
+    "sass": "^1.80.3"
   }
 }
