@@ -4,5 +4,5 @@ interface WindowTitleProps {
 }
 
 export const WindowTitle: FC<WindowTitleProps> = ({ name }) => {
-  return <div>{name}</div>;
+  return <div className="window-title">{name}</div>;
 };

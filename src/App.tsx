@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider } from "react-redux";
 import { store } from "./redux";
-import { Kernel } from "./system/Kernel";
+import { Kernel } from "./components/system/Kernel";
 import "./scss/main.scss";
 
 function App() {

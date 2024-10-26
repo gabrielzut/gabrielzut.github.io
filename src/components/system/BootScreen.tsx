@@ -1,12 +1,12 @@
 import { FC, useCallback, useEffect, useState } from "react";
-import logo from "../assets/img/logo.png";
-import { Loading } from "../components/general/Loading";
+import logo from "../../assets/img/logo.png";
+import { Loading } from "../../components/general/Loading";
 import {
   hideBootScreen,
   showBootScreen,
-} from "../redux/reducers/SystemReducer";
+} from "../../redux/reducers/SystemReducer";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../redux";
+import { RootState } from "../../redux";
 
 interface BootScreenProps {}
 

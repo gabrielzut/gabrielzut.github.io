@@ -1,11 +1,13 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface SystemState {
   bootScreenVisible: boolean;
+  volume: number;
 }
 
 const initialState: SystemState = {
   bootScreenVisible: false,
+  volume: 100,
 };
 
 export const systemSlice = createSlice({
@@ -17,6 +19,9 @@ export const systemSlice = createSlice({
     },
     hideBootScreen: (state) => {
       state.bootScreenVisible = false;
+    },
+    setVolume: (state, action: PayloadAction<number>) => {
+      state.volume = action.payload;
     },
   },
 });

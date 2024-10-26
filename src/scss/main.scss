@@ -4,6 +4,7 @@
 @use "./screens/wanderer";
 @use "./components/program";
 @use "./components/topBar";
+@use "./components/warn";
 
 body {
   margin: 0;

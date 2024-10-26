@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "../redux";
-import { WindowTitle } from "../components/general/WindowTitle";
+import { RootState } from "../../redux";
+import { WindowTitle } from "../../components/general/WindowTitle";
 interface WandererProps {}
 
 // Wanderer -> the main process responsible for the desktop environment
@@ -16,6 +16,7 @@ export const Wanderer: FC<WandererProps> = (props) => {
         <div
           key={program.id}
           className={`program ${program.shouldShowFrame ? "framed" : ""}`}
+          style={{ top: program.top, left: program.left }}
         >
           {program.shouldShowFrame && <WindowTitle name={program.name} />}
           {program.render()}
