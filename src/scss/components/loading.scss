@@ -1,0 +1,12 @@
+.loading {
+  &-boot {
+    display: flex;
+
+    .loading-bar {
+      height: 32px;
+      background-color: rgb(26, 26, 149);
+
+      transition: width 0.5s ease-in-out;
+    }
+  }
+}

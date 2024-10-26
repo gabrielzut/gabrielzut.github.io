@@ -1,0 +1,31 @@
+.top-bar {
+  height: 32px;
+  width: 100vw;
+  background-color: rgb(147, 147, 147);
+  border-bottom: 0.2rem solid rgb(80, 80, 80);
+  display: flex;
+  justify-content: space-between;
+
+  .clock {
+    line-height: 32px;
+    font-size: 14pt;
+  }
+
+  .start-button {
+    height: 42px;
+    width: 42px;
+    margin-left: 5px;
+    border-radius: 50%;
+    background-color: rgb(147, 147, 147);
+
+    &:active {
+      background-size: 2px 2px;
+      background-color: rgba(140, 140, 140, 1);
+    }
+
+    .logo {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}

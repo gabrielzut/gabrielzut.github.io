@@ -1,0 +1,7 @@
+.program {
+  position: absolute;
+
+  &.framed {
+    border: 1px solid gray;
+  }
+}

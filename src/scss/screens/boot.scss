@@ -1,0 +1,22 @@
+.boot-screen {
+  background-image: url("../../assets/img/bootbg.jpg");
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: 100vw;
+}
+
+.loading-wrapper {
+  position: absolute;
+  bottom: 0;
+  width: 100vw;
+}
+
+.logo-wrapper {
+  transform: translateY(-32px);
+}
