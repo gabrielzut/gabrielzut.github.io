@@ -4,6 +4,10 @@ import ProcessManagerReducer from "./reducers/ProcessManagerReducer";
 
 export const store = configureStore({
   reducer: { system: SystemReducer, processManager: ProcessManagerReducer },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
 
 export type AppStore = typeof store;

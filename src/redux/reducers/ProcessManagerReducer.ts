@@ -26,8 +26,8 @@ const initialState: ProcessManagerState = {
       Warn,
       true,
       undefined,
-      window.innerHeight / 2 - 75,
-      window.innerWidth / 2 - 75
+      window.innerWidth / 2 - 75,
+      window.innerHeight / 2 - 75
     ),
   ],
 };

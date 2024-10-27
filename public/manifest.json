@@ -31,7 +31,6 @@
   "lang": "pt-BR",
   "name": "ZutiOS",
   "short_name": "ZutiOS",
-  "start_url": "https://gabrielzut.github.io",
-  "description": "Personal portfolio",
-  "id": "https://gabrielzut.github.io"
+  "start_url": "/",
+  "description": "Personal portfolio"
 }
