@@ -10,6 +10,9 @@ export class Program {
   isDragging = false;
   x = 0;
   y = 0;
+  height = 300;
+  width = 300;
+  maximized = false;
 
   constructor(
     id: string,
@@ -18,7 +21,10 @@ export class Program {
     shouldShowFrame = true,
     trayIcon?: React.FC,
     x = 0,
-    y = 0
+    y = 0,
+    maximized = false,
+    width = 300,
+    height = 300
   ) {
     this.id = id;
     this.name = name;
@@ -27,6 +33,9 @@ export class Program {
     this.trayIcon = trayIcon;
     this.x = x;
     this.y = y;
+    this.maximized = maximized;
+    this.width = width;
+    this.height = height;
   }
 
   renderIcon() {
@@ -44,6 +53,10 @@ export class Program {
         windowName={this.name}
         defaultX={this.x}
         defaultY={this.y}
+        defaultMaximized={this.maximized}
+        windowId={this.id}
+        defaultHeight={this.height}
+        defaultWidth={this.width}
       >
         <ComponentToRender />
       </DraggableWindow>
