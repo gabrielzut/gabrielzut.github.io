@@ -1,5 +1,5 @@
 import { FC } from "react";
-import warnIcon from "../../assets/img/warn.gif";
+import icon from "../../assets/img/warn.gif";
 
 interface WarnProps {}
 
@@ -8,7 +8,7 @@ const Warn: FC<WarnProps> = (props) => {
     <div className="warn">
       <div>
         <img
-          src={warnIcon}
+          src={icon}
           className="logo"
           draggable={false}
           alt="ZutiOS logotype"
@@ -20,3 +20,4 @@ const Warn: FC<WarnProps> = (props) => {
 };
 
 export default Warn;
+export const warnIcon = icon;

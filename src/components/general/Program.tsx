@@ -6,6 +6,7 @@ export class Program {
   name: string;
   component: React.FC;
   shouldShowFrame: boolean;
+  icon?: string;
   trayIcon?: React.FC;
   isDragging = false;
   x = 0;
@@ -13,6 +14,10 @@ export class Program {
   height = 300;
   width = 300;
   maximized = false;
+  minimized = false;
+  shouldShowInThePanel = true;
+  minWidth = 200;
+  minHeight = 200;
 
   constructor(
     id: string,
@@ -22,9 +27,13 @@ export class Program {
     trayIcon?: React.FC,
     x = 0,
     y = 0,
+    shouldShowInThePanel = true,
+    icon?: string,
     maximized = false,
     width = 300,
-    height = 300
+    height = 300,
+    minWidth = 200,
+    minHeight = 200
   ) {
     this.id = id;
     this.name = name;
@@ -36,6 +45,10 @@ export class Program {
     this.maximized = maximized;
     this.width = width;
     this.height = height;
+    this.icon = icon;
+    this.shouldShowInThePanel = shouldShowInThePanel;
+    this.minWidth = minWidth;
+    this.minHeight = minHeight;
   }
 
   renderIcon() {
@@ -57,6 +70,8 @@ export class Program {
         windowId={this.id}
         defaultHeight={this.height}
         defaultWidth={this.width}
+        isMinimized={this.minimized}
+        icon={this.icon}
       >
         <ComponentToRender />
       </DraggableWindow>

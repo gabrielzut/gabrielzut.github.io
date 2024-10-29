@@ -1,6 +1,11 @@
 .program {
-  background-color: rgb(147, 147, 147);
+  background-color: rgb(170, 170, 170);
   display: flex;
+
+  &.maximized {
+    transition: width 0.15s linear, height 0.15s linear, top 0.15s linear,
+      left 0.15s linear;
+  }
 
   &.framed {
     border: 1px solid rgb(80, 80, 80);
@@ -29,14 +34,16 @@
   color: white;
   line-height: 24px;
   padding-left: 5px;
+  padding-right: 2px;
   display: flex;
   justify-content: space-between;
 
   &-button {
     background-color: transparent;
     background-color: rgb(147, 147, 147);
-    width: 24px;
-    height: 24px;
+    margin-top: 2px;
+    width: 20px;
+    height: 20px;
     padding: 0;
     display: flex;
     justify-content: center;
@@ -56,6 +63,19 @@
 
   &-buttons-wrapper {
     display: flex;
+    gap: 2px;
+  }
+
+  &-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  &-name-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
 }
 

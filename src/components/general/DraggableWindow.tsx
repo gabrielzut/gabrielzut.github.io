@@ -10,7 +10,10 @@ import maximizeButton from "../../assets/img/maximizebtn.png";
 import maximizeOffButton from "../../assets/img/maximizeoffbtn.png";
 import minimizeButton from "../../assets/img/minimizebtn.png";
 import { useDispatch } from "react-redux";
-import { closeProgram } from "../../redux/reducers/ProcessManagerReducer";
+import {
+  closeProgram,
+  minimizeProgram,
+} from "../../redux/reducers/ProcessManagerReducer";
 
 interface DraggableWindowProps {
   children: ReactNode;
@@ -22,6 +25,10 @@ interface DraggableWindowProps {
   defaultWidth?: number;
   defaultHeight?: number;
   defaultMaximized?: boolean;
+  isMinimized?: boolean;
+  icon?: string;
+  minWidth?: number;
+  minHeight?: number;
 }
 
 interface WindowTitleButtonProps {
@@ -59,6 +66,10 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
   defaultWidth = 300,
   defaultHeight = 300,
   defaultMaximized = false,
+  isMinimized = false,
+  icon,
+  minWidth = 200,
+  minHeight = 200,
 }) => {
   const [position, setPosition] = useState({
     x: defaultX,
@@ -75,6 +86,10 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
   const [isMaximized, setIsMaximized] = useState(defaultMaximized);
   const dispatch = useDispatch();
 
+  useEffect(() => {
+    if (!isMaximized && position.y < 42) setIsMaximized(true);
+  }, [isMaximized, position.y]);
+
   const handleMouseDown = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       setIsDragging(true);
@@ -90,7 +105,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (isDragging) {
         if (isMaximized) {
-          console.log(event.clientX, event.clientY);
+          setOffset({ x: size.width / 2, y: 0 });
           setPosition({ x: event.clientX, y: event.clientY });
           setIsMaximized(false);
         } else {
@@ -103,12 +118,16 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
 
       if (isResizing) {
         setSize({
-          width: resizeDirection?.includes("right")
-            ? event.clientX - position.x
-            : size.width,
-          height: resizeDirection?.includes("bottom")
-            ? event.clientY - position.y
-            : size.height,
+          width:
+            resizeDirection?.includes("right") &&
+            event.clientX - position.x >= minWidth
+              ? event.clientX - position.x
+              : size.width,
+          height:
+            resizeDirection?.includes("bottom") &&
+            event.clientY - position.y >= minHeight
+              ? event.clientY - position.y
+              : size.height,
         });
       }
     },
@@ -116,6 +135,8 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
       isDragging,
       isMaximized,
       isResizing,
+      minHeight,
+      minWidth,
       offset,
       position,
       resizeDirection,
@@ -155,29 +176,48 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
     handleMouseUp,
   ]);
 
+  const handleToggleMaximize = useCallback(() => {
+    if (isMaximized) {
+      setPosition({ x: defaultX, y: defaultY });
+      setSize({ width: defaultWidth, height: defaultHeight });
+    }
+    setIsMaximized(!isMaximized);
+  }, [defaultHeight, defaultWidth, defaultX, defaultY, isMaximized]);
+
   return (
     <div
-      className={className}
+      className={`${className} ${isMaximized ? "maximized" : ""}`}
       style={{
         left: isMaximized ? 0 : position.x,
-        top: isMaximized ? 32 : position.y,
+        top: isMaximized ? 42 : position.y,
         width: isMaximized ? window.innerWidth : size.width,
-        height: isMaximized ? window.innerHeight - 32 : size.height,
+        height: isMaximized ? window.innerHeight - 42 : size.height,
+        display: isMinimized ? "none" : "flex",
       }}
     >
       <div onMouseDown={handleMouseDown} className="window-title">
-        {windowName}
+        <div
+          className="window-title-name-wrapper"
+          onDoubleClick={handleToggleMaximize}
+        >
+          <img
+            src={icon}
+            className="window-title-icon"
+            draggable={false}
+            alt={`${windowName} window title icon`}
+          />
+          {windowName}
+        </div>
         <div className="window-title-buttons-wrapper">
           <WindowTitleButton
             type="minimize"
-            onClick={useCallback(() => {}, [])}
+            onClick={useCallback(() => {
+              dispatch(minimizeProgram(windowId));
+            }, [dispatch, windowId])}
           />
           <WindowTitleButton
             type="maximize"
-            onClick={useCallback(() => {
-              if (isMaximized) setPosition({ x: defaultX, y: defaultY });
-              setIsMaximized(!isMaximized);
-            }, [defaultX, defaultY, isMaximized])}
+            onClick={handleToggleMaximize}
             isMaximized={isMaximized}
           />
           <WindowTitleButton
@@ -212,14 +252,6 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
           [handleResizeStart]
         )}
         className="draggable-bottom-right"
-        style={{
-          position: "absolute",
-          right: 0,
-          bottom: 0,
-          width: "20px",
-          height: "20px",
-          cursor: "se-resize",
-        }}
       />
     </div>
   );

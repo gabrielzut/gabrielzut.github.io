@@ -4,7 +4,7 @@ import { GenerateUUID } from "../../utils/Generators";
 import { TopBar } from "../../components/programs/TopBar";
 import React from "react";
 import { VolumeTrayIcon } from "../../components/programs/VolumeTrayIcon";
-import Warn from "../../components/programs/Warn";
+import Warn, { warnIcon } from "../../components/programs/Warn";
 
 export interface ProcessManagerState {
   programs: Program[];
@@ -12,13 +12,25 @@ export interface ProcessManagerState {
 
 const initialState: ProcessManagerState = {
   programs: [
-    new Program(GenerateUUID(), "TopBar", TopBar, false),
+    new Program(
+      GenerateUUID(),
+      "TopBar",
+      TopBar,
+      false,
+      undefined,
+      0,
+      0,
+      false
+    ),
     new Program(
       GenerateUUID(),
       "VolumeDaemon",
       React.Fragment,
       false,
-      VolumeTrayIcon
+      VolumeTrayIcon,
+      0,
+      0,
+      false
     ),
     new Program(
       GenerateUUID(),
@@ -27,7 +39,9 @@ const initialState: ProcessManagerState = {
       true,
       undefined,
       window.innerWidth / 2 - 75,
-      window.innerHeight / 2 - 75
+      window.innerHeight / 2 - 75,
+      true,
+      warnIcon
     ),
   ],
 };
@@ -44,9 +58,22 @@ export const processManagerSlice = createSlice({
         (program) => program.id !== action.payload
       );
     },
+    minimizeProgram: (state, action: PayloadAction<string>) => {
+      state.programs = state.programs.map((program) => {
+        if (program.id === action.payload) program.minimized = true;
+        return program;
+      });
+    },
+    showProgram: (state, action: PayloadAction<string>) => {
+      state.programs = state.programs.map((program) => {
+        if (program.id === action.payload) program.minimized = false;
+        return program;
+      });
+    },
   },
 });
 
-export const { addProgram, closeProgram } = processManagerSlice.actions;
+export const { addProgram, closeProgram, minimizeProgram, showProgram } =
+  processManagerSlice.actions;
 
 export default processManagerSlice.reducer;
