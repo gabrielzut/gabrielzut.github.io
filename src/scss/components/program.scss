@@ -38,6 +38,10 @@
   display: flex;
   justify-content: space-between;
 
+  &.dragging {
+    cursor: move;
+  }
+
   &-button {
     background-color: transparent;
     background-color: rgb(147, 147, 147);

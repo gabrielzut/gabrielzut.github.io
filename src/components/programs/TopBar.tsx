@@ -3,15 +3,18 @@ import smallLogo from "../../assets/img/small-logo.png";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
 import {
+  addProgram,
+  closeProgram,
   minimizeProgram,
   showProgram,
 } from "../../redux/reducers/ProcessManagerReducer";
+import { Program } from "../general/Program";
+import { GenerateUUID } from "../../utils/Generators";
+import { mainMenuProgramEntry } from "./MainMenu";
 
 interface TrayIconProps {
   children: ReactNode;
 }
-
-interface TopBarProps {}
 
 export const TrayIcon: FC<TrayIconProps> = ({ children }) => {
   return <div className="tray-icon">{children}</div>;
@@ -54,13 +57,33 @@ export const AppMenuButton: FC<AppMenuButtonProps> = ({
   );
 };
 
-export const TopBar: FC<TopBarProps> = (props) => {
+interface TopBarProps {}
+
+function newMenu() {
+  return new Program(
+    GenerateUUID(),
+    mainMenuProgramEntry.name,
+    mainMenuProgramEntry.component,
+    mainMenuProgramEntry.shouldShowFrame,
+    mainMenuProgramEntry.trayIcon,
+    mainMenuProgramEntry.defaultX,
+    mainMenuProgramEntry.defaultY,
+    false,
+    mainMenuProgramEntry.icon,
+    false,
+    mainMenuProgramEntry.defaultWidth,
+    mainMenuProgramEntry.defaultHeight
+  );
+}
+
+export const TopBar: FC<TopBarProps> = () => {
   const [dateAndTime, setDateAndTime] = useState(
     new Date().toLocaleTimeString()
   );
   const openedPrograms = useSelector(
     (state: RootState) => state.processManager.programs
   );
+  const dispatch = useDispatch();
 
   useEffect(() => {
     setInterval(() => {
@@ -71,7 +94,19 @@ export const TopBar: FC<TopBarProps> = (props) => {
   return (
     <div className="top-bar">
       <div className="left">
-        <button className="start-button">
+        <button
+          className="start-button"
+          onClick={useCallback(() => {
+            const id = openedPrograms.find(
+              (program) => program.name === "mainMenu"
+            )?.id;
+            if (id) {
+              dispatch(closeProgram(id));
+            } else {
+              dispatch(addProgram(newMenu()));
+            }
+          }, [dispatch, openedPrograms])}
+        >
           <img
             src={smallLogo}
             className="logo"

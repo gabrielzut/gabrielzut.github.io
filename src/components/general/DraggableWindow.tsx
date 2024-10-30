@@ -195,7 +195,10 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
         display: isMinimized ? "none" : "flex",
       }}
     >
-      <div onMouseDown={handleMouseDown} className="window-title">
+      <div
+        onMouseDown={handleMouseDown}
+        className={`window-title ${isDragging ? "dragging" : ""}`}
+      >
         <div
           className="window-title-name-wrapper"
           onDoubleClick={handleToggleMaximize}
