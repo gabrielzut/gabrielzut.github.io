@@ -1,10 +1,7 @@
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import logo from "../../assets/img/logo.png";
 import { Loading } from "../../components/general/Loading";
-import {
-  hideBootScreen,
-  showBootScreen,
-} from "../../redux/reducers/SystemReducer";
+import { hideBootScreen } from "../../redux/reducers/SystemReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
 
@@ -16,13 +13,12 @@ export const BootScreen: FC<BootScreenProps> = () => {
   const bootScreenVisible = useSelector(
     (state: RootState) => state.system.bootScreenVisible
   );
+  const interval = useRef<NodeJS.Timer>();
 
   const startBoot = useCallback(() => {
-    dispatch(showBootScreen());
-
     let count = 0;
 
-    setInterval(() => {
+    interval.current = setInterval(() => {
       setProgress(count * 20);
 
       if (count === 5) dispatch(hideBootScreen());
@@ -31,8 +27,14 @@ export const BootScreen: FC<BootScreenProps> = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    startBoot();
-  }, [startBoot]);
+    if (bootScreenVisible) {
+      startBoot();
+    }
+  }, [bootScreenVisible, startBoot]);
+
+  useEffect(() => {
+    if (!bootScreenVisible && interval.current) clearInterval(interval.current);
+  }, [bootScreenVisible]);
 
   return (
     <div className={`boot-screen ${bootScreenVisible ? "" : "hidden"}`}>
