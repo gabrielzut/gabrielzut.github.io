@@ -9,7 +9,7 @@ import {
   showProgram,
 } from "../../redux/reducers/ProcessManagerReducer";
 import { Program } from "../general/Program";
-import { GenerateUUID } from "../../utils/Generators";
+import { GenerateUUID } from "../../utils/generators";
 import { mainMenuProgramEntry } from "./MainMenu";
 
 interface TrayIconProps {

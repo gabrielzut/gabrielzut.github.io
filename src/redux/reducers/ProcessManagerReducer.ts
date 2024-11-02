@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Program } from "../../components/general/Program";
-import { GenerateUUID } from "../../utils/Generators";
+import { GenerateUUID } from "../../utils/generators";
 import { TopBar } from "../../components/programs/TopBar";
 import React from "react";
 import { VolumeTrayIcon } from "../../components/programs/VolumeTrayIcon";

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
 import { programCategories, ProgramEntry } from ".";
 import shutDownIcon from "../../assets/img/shutdown.gif";
+import { shutDownSystem } from "../../redux/reducers/SystemReducer";
 
 interface ProgramCategoryProps {
   name: string;
@@ -63,7 +64,10 @@ export const MainMenu: FC<MainMenuProps> = () => {
           />
         ))}
       </div>
-      <button className="shutdown-button">
+      <button
+        className="shutdown-button"
+        onClick={useCallback(() => dispatch(shutDownSystem()), [dispatch])}
+      >
         <img src={shutDownIcon} alt="Shutdown icon" />
         Shutdown computer...
       </button>
