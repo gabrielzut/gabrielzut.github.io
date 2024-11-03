@@ -1,10 +1,11 @@
 import React from "react";
 import DraggableWindow from "./DraggableWindow";
 
-export class Program {
+export class Program<T extends React.FC<any>> {
   id: string;
   name: string;
-  component: React.FC;
+  component: T;
+  props?: React.ComponentProps<T>;
   shouldShowFrame: boolean;
   icon?: string;
   trayIcon?: React.FC;
@@ -22,7 +23,7 @@ export class Program {
   constructor(
     id: string,
     name: string,
-    component: React.FC,
+    component: T,
     shouldShowFrame = true,
     trayIcon?: React.FC,
     x = 0,
@@ -58,11 +59,11 @@ export class Program {
   }
 
   render() {
-    const ComponentToRender = this.component;
+    const { component: ComponentToRender, props } = this;
     return this.shouldShowFrame ? (
       <DraggableWindow
         key={this.id}
-        className={`program ${this.shouldShowFrame ? "framed" : ""}`}
+        className={"program framed"}
         windowName={this.name}
         defaultX={this.x}
         defaultY={this.y}
@@ -73,14 +74,14 @@ export class Program {
         isMinimized={this.minimized}
         icon={this.icon}
       >
-        <ComponentToRender />
+        <ComponentToRender {...(props as React.ComponentProps<T>)} />
       </DraggableWindow>
     ) : (
       <div
         style={{ top: this.y, left: this.x, position: "absolute" }}
         key={this.id}
       >
-        <ComponentToRender />
+        <ComponentToRender {...(props as React.ComponentProps<T>)} />
       </div>
     );
   }

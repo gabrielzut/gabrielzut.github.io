@@ -8,6 +8,7 @@
 @use "./components/topBar";
 @use "./components/mainMenu";
 @use "./components/warn";
+@use "./programs/fileExplorer";
 
 body {
   margin: 0;

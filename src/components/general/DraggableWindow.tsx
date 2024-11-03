@@ -3,17 +3,20 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import closeButton from "../../assets/img/closebtn.png";
 import maximizeButton from "../../assets/img/maximizebtn.png";
 import maximizeOffButton from "../../assets/img/maximizeoffbtn.png";
 import minimizeButton from "../../assets/img/minimizebtn.png";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   closeProgram,
+  incrementZIndex,
   minimizeProgram,
 } from "../../redux/reducers/ProcessManagerReducer";
+import { RootState } from "../../redux";
 
 interface DraggableWindowProps {
   children: ReactNode;
@@ -85,6 +88,38 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
   const [isResizing, setIsResizing] = useState(false);
   const [isMaximized, setIsMaximized] = useState(defaultMaximized);
   const dispatch = useDispatch();
+  const currentZIndex = useSelector(
+    (state: RootState) => state.processManager.currentZIndex
+  );
+  const firstRender = useRef(true);
+  const [zIndex, setZIndex] = useState(currentZIndex);
+  const isActiveWindow = useMemo(
+    () => zIndex === currentZIndex - 1,
+    [currentZIndex, zIndex]
+  );
+  const wasMinimized = useRef(false);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      dispatch(incrementZIndex());
+      firstRender.current = false;
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (wasMinimized.current && !isMinimized && !isActiveWindow) {
+      setZIndex(currentZIndex);
+      dispatch(incrementZIndex());
+    }
+  }, [currentZIndex, dispatch, isActiveWindow, isMinimized]);
+
+  useEffect(() => {
+    if (isMinimized) {
+      wasMinimized.current = true;
+    } else {
+      wasMinimized.current = false;
+    }
+  }, [isMinimized]);
 
   useEffect(() => {
     if (!isMaximized && position.y < 42) setIsMaximized(true);
@@ -184,6 +219,17 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
     setIsMaximized(!isMaximized);
   }, [defaultHeight, defaultWidth, defaultX, defaultY, isMaximized]);
 
+  const handleChangeActiveWindow = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (isActiveWindow) return;
+      else {
+        setZIndex(currentZIndex);
+        dispatch(incrementZIndex());
+      }
+    },
+    [currentZIndex, dispatch, isActiveWindow]
+  );
+
   return (
     <div
       className={`${className} ${isMaximized ? "maximized" : ""}`}
@@ -193,7 +239,9 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
         width: isMaximized ? window.innerWidth : size.width,
         height: isMaximized ? window.innerHeight - 42 : size.height,
         display: isMinimized ? "none" : "flex",
+        zIndex,
       }}
+      onMouseDown={handleChangeActiveWindow}
     >
       <div
         onMouseDown={handleMouseDown}

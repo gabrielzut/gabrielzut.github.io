@@ -4,10 +4,12 @@ import { GenerateUUID } from "../../utils/generators";
 import { TopBar } from "../../components/programs/TopBar";
 import React from "react";
 import { VolumeTrayIcon } from "../../components/programs/VolumeTrayIcon";
-import Warn, { warnIcon } from "../../components/programs/Warn";
+import { warnProgramEntry } from "../../components/programs/Warn";
+import { fileExplorerEntry } from "../../components/programs/FileExplorer";
 
 export interface ProcessManagerState {
-  programs: Program[];
+  programs: Program<any>[];
+  currentZIndex: number;
 }
 
 const initialState: ProcessManagerState = {
@@ -34,23 +36,38 @@ const initialState: ProcessManagerState = {
     ),
     new Program(
       GenerateUUID(),
-      "Warning",
-      Warn,
+      warnProgramEntry.name,
+      warnProgramEntry.component,
       true,
       undefined,
-      window.innerWidth / 2 - 75,
-      window.innerHeight / 2 - 75,
+      warnProgramEntry.defaultX,
+      warnProgramEntry.defaultY,
       true,
-      warnIcon
+      warnProgramEntry.icon
+    ),
+    new Program(
+      GenerateUUID(),
+      fileExplorerEntry.name,
+      fileExplorerEntry.component,
+      true,
+      undefined,
+      fileExplorerEntry.defaultX,
+      fileExplorerEntry.defaultY,
+      true,
+      fileExplorerEntry.icon,
+      false,
+      fileExplorerEntry.defaultWidth,
+      fileExplorerEntry.defaultHeight
     ),
   ],
+  currentZIndex: 1,
 };
 
 export const processManagerSlice = createSlice({
   name: "processManager",
   initialState,
   reducers: {
-    addProgram: (state, action: PayloadAction<Program>) => {
+    addProgram: (state, action: PayloadAction<Program<any>>) => {
       state.programs.push(action.payload);
     },
     closeProgram: (state, action: PayloadAction<string>) => {
@@ -70,10 +87,18 @@ export const processManagerSlice = createSlice({
         return program;
       });
     },
+    incrementZIndex: (state) => {
+      state.currentZIndex++;
+    },
   },
 });
 
-export const { addProgram, closeProgram, minimizeProgram, showProgram } =
-  processManagerSlice.actions;
+export const {
+  addProgram,
+  closeProgram,
+  minimizeProgram,
+  showProgram,
+  incrementZIndex,
+} = processManagerSlice.actions;
 
 export default processManagerSlice.reducer;
