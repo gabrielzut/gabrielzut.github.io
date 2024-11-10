@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FC, useCallback, useState } from "react";
 
 interface DropDownOption {
@@ -30,8 +30,10 @@ const DropDown: FC<DropDownProps> = ({ dropdownOptions }) => {
 interface WindowOptionProps {
   name: string;
   dropdownOptions?: DropDownOption[];
-  onClick?: () => void;
+  onClick: () => void;
   isBlocked?: boolean;
+  onMouseEnter: () => void;
+  isOpen: boolean;
 }
 
 export const WindowOption: FC<WindowOptionProps> = ({
@@ -39,31 +41,72 @@ export const WindowOption: FC<WindowOptionProps> = ({
   dropdownOptions,
   onClick,
   isBlocked = false,
+  onMouseEnter,
+  isOpen,
 }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const handleButtonClick = useCallback(() => {
-    if (isBlocked) return;
-    if (onClick) onClick();
-    if (dropdownOptions && dropdownOptions.length)
-      setIsDropdownOpen(!isDropdownOpen);
-  }, [dropdownOptions, isBlocked, isDropdownOpen, onClick]);
-
   return (
     <div
       tabIndex={0}
-      onBlur={useCallback(() => setIsDropdownOpen(false), [])}
-      className={`window-option ${isDropdownOpen ? "expanded" : ""}`}
+      onMouseEnter={onMouseEnter}
+      className={`window-option ${isOpen ? "expanded" : ""}`}
     >
       <button
         className={`window-option-button ${isBlocked ? "blocked" : ""}`}
-        onClick={handleButtonClick}
+        onClick={onClick}
       >
         {name}
       </button>
-      {dropdownOptions && dropdownOptions.length && isDropdownOpen && (
+      {dropdownOptions && dropdownOptions.length && isOpen && (
         <DropDown dropdownOptions={dropdownOptions} />
       )}
+    </div>
+  );
+};
+
+type WindowOptionsArrayItem = Omit<
+  WindowOptionProps,
+  "onMouseEnter" | "isOpen" | "onClick"
+> & {
+  onClick?: () => void;
+};
+
+interface WindowOptionsProps {
+  options: WindowOptionsArrayItem[];
+}
+
+export const WindowOptions: FC<WindowOptionsProps> = ({ options }) => {
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const handleOptionClick = useCallback((optionName: string) => {
+    setOpenDropdown((prev) => (prev === optionName ? null : optionName));
+  }, []);
+
+  const handleMouseEnter = useCallback(
+    (optionName: string) => {
+      if (openDropdown) setOpenDropdown(optionName);
+    },
+    [openDropdown]
+  );
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="window-options">
+      {options.map((option) => (
+        <WindowOption
+          {...option}
+          key={option.name}
+          onClick={() => option.onClick || handleOptionClick(option.name)}
+          onMouseEnter={() => handleMouseEnter(option.name)}
+          isOpen={openDropdown === option.name}
+        />
+      ))}
     </div>
   );
 };

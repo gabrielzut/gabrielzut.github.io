@@ -1,9 +1,14 @@
 import { Action, configureStore, ThunkAction } from "@reduxjs/toolkit";
 import SystemReducer from "./reducers/SystemReducer";
 import ProcessManagerReducer from "./reducers/ProcessManagerReducer";
+import FileSystemReducer from "./reducers/FileSystemReducer";
 
 export const store = configureStore({
-  reducer: { system: SystemReducer, processManager: ProcessManagerReducer },
+  reducer: {
+    system: SystemReducer,
+    processManager: ProcessManagerReducer,
+    fileSystem: FileSystemReducer,
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
