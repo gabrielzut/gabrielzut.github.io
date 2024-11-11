@@ -27,7 +27,6 @@
   ],
   "orientation": "portrait",
   "display": "standalone",
-  "dir": "left",
   "lang": "pt-BR",
   "name": "ZutiOS",
   "short_name": "ZutiOS",
