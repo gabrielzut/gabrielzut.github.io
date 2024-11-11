@@ -3,3 +3,19 @@
   flex-direction: column;
   width: 100%;
 }
+
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 10px 15px;
+
+  .file-entry {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}

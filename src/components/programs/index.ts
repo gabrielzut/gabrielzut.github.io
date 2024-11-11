@@ -8,6 +8,8 @@ export interface ProgramEntry {
   trayIcon?: React.FC;
   defaultX?: number;
   defaultY?: number;
+  minWidth?: number;
+  minHeight?: number;
 }
 
 export interface ProgramCategory {

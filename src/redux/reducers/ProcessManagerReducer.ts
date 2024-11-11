@@ -57,7 +57,9 @@ const initialState: ProcessManagerState = {
       fileExplorerEntry.icon,
       false,
       fileExplorerEntry.defaultWidth,
-      fileExplorerEntry.defaultHeight
+      fileExplorerEntry.defaultHeight,
+      fileExplorerEntry.minWidth,
+      fileExplorerEntry.minHeight
     ),
   ],
   currentZIndex: 1,

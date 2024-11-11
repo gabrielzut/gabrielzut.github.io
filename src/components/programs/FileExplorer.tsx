@@ -1,16 +1,40 @@
-import { FC, useCallback, useState } from "react";
+import { FC, useCallback, useMemo, useState } from "react";
 import { ProgramEntry } from ".";
 import folderIcon from "../../assets/img/folder.gif";
 import { WindowOptions } from "../general/WindowOption";
 import arrowIcon from "../../assets/img/go-back.png";
 import homeIcon from "../../assets/img/home.png";
 import searchIcon from "../../assets/img/search.png";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux";
+import { Folder, GeneralFile } from "../../model/file";
+import { findFolder, getFileIcon } from "../../utils/filesystemUtils";
 
 interface FileExplorerProps {
   startingPath?: string[];
 }
 
 const HOME_PATH = ["home", "user"];
+
+interface FileEntryProps {
+  file: GeneralFile;
+}
+
+const FileEntry: FC<FileEntryProps> = ({ file }) => {
+  return (
+    <div className="file-entry">
+      <div className="icon">
+        {
+          <img
+            alt={`${file.name} icon`}
+            src={file.icon || getFileIcon(file.type)}
+          />
+        }
+      </div>
+      <div className="file-name">{file.name}</div>
+    </div>
+  );
+};
 
 export const FileExplorer: FC<FileExplorerProps> = ({
   startingPath = HOME_PATH,
@@ -22,6 +46,11 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [backStack, setBackStack] = useState<string[][]>([startingPath]);
   const [forwardStack, setForwardStack] = useState<string[][]>([]);
+  const root = useSelector((state: RootState) => state.fileSystem.root);
+  const currentDirectory = useMemo(
+    () => findFolder(root as Folder, path),
+    [path, root]
+  );
 
   const onChangePathInputValue = useCallback(
     (value: string[]) => setPathInputValue(`/${value.join("/")}`),
@@ -137,10 +166,12 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         </button>
       </div>
       <div className="content">
-        <div className="left-panel">
-          
+        <div className="left-panel"></div>
+        <div className="file-list">
+          {currentDirectory?.files.map((file) => (
+            <FileEntry key={file.name} file={file} />
+          ))}
         </div>
-        <div className="file-list"></div>
       </div>
     </div>
   );
@@ -155,4 +186,6 @@ export const fileExplorerEntry: ProgramEntry = {
   defaultHeight: 800,
   defaultWidth: 800,
   icon: folderIcon,
+  minWidth: 340,
+  minHeight: 400,
 };

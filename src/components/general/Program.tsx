@@ -60,6 +60,7 @@ export class Program<T extends React.FC<any>> {
 
   render() {
     const { component: ComponentToRender, props } = this;
+
     return this.shouldShowFrame ? (
       <DraggableWindow
         key={this.id}
@@ -73,6 +74,8 @@ export class Program<T extends React.FC<any>> {
         defaultWidth={this.width}
         isMinimized={this.minimized}
         icon={this.icon}
+        minWidth={this.minWidth}
+        minHeight={this.minHeight}
       >
         <ComponentToRender {...(props as React.ComponentProps<T>)} />
       </DraggableWindow>
