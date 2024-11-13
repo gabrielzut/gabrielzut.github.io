@@ -12,7 +12,6 @@
 
 body {
   margin: 0;
-  box-sizing: border-box !important;
   min-width: 300px;
 }
 
@@ -24,4 +23,5 @@ html {
   -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  box-sizing: border-box !important;
 }
