@@ -11,8 +11,13 @@ interface ProgramCategoryProps {
   icon: string;
 }
 
-export const ProgramCategory: FC<ProgramCategoryProps> = ({ name }) => {
-  return <div></div>;
+export const ProgramCategory: FC<ProgramCategoryProps> = ({ name, icon }) => {
+  return (
+    <div className="program-category-entry">
+      <img alt={`program category ${name} menu icon`} src={icon}></img>
+      {name}
+    </div>
+  );
 };
 
 interface MainMenuProps {}

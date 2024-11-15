@@ -81,7 +81,7 @@ export class Program<T extends React.FC<any>> {
       </DraggableWindow>
     ) : (
       <div
-        style={{ top: this.y, left: this.x, position: "absolute" }}
+        style={{ top: this.y, left: this.x, position: "absolute", zIndex: 999999 }}
         key={this.id}
       >
         <ComponentToRender {...(props as React.ComponentProps<T>)} />

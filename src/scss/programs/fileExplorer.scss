@@ -62,8 +62,29 @@
   padding: 15px 10px;
   width: 150px;
 
+  .divider {
+    width: 150px;
+    height: 1px;
+    background-color: rgb(192, 192, 192);
+    transform: translateX(-10px);
+    margin: 15px 0;
+  }
+
   .shortcut-entry {
-    height: 24px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+
+    &:hover {
+      color: rgb(9, 9, 121);
+      cursor: pointer;
+    }
+
+    .icon {
+      margin-right: 5px;
+    }
   }
 
   .title {

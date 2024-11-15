@@ -33,6 +33,7 @@
 }
 
 .computer-shutdown {
+  box-sizing: content-box !important;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -60,6 +61,7 @@
   border-color: antiquewhite;
   border-style: solid;
   border-radius: 2%;
+  box-sizing: content-box !important;
 }
 
 .monitor-holder {

@@ -5,6 +5,11 @@ import { WindowOptions } from "../general/WindowOption";
 import arrowIcon from "../../assets/img/go-back.png";
 import homeIcon from "../../assets/img/home.png";
 import searchIcon from "../../assets/img/search.png";
+import documentsIcon from "../../assets/img/documents.png";
+import downloadsIcon from "../../assets/img/downloads.png";
+import imagesIcon from "../../assets/img/images.png";
+import musicIcon from "../../assets/img/music.png";
+import videosIcon from "../../assets/img/videos.png";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux";
 import { Folder, GeneralFile } from "../../model/file";
@@ -18,10 +23,20 @@ const HOME_PATH = ["home", "user"];
 
 interface ShortcutEntryProps {
   shortcut: { name: string; icon: string };
+  onClick: React.MouseEventHandler;
 }
 
-const ShortcutEntry: FC<ShortcutEntryProps> = ({ shortcut }) => {
-  return <div className="shortcut-entry">{shortcut.name}</div>;
+const ShortcutEntry: FC<ShortcutEntryProps> = ({ shortcut, onClick }) => {
+  return (
+    <button onClick={onClick} className="shortcut-entry">
+      <img
+        className="icon"
+        alt={`${shortcut.name} shortcut icon`}
+        src={shortcut.icon}
+      />
+      <div className="name">{shortcut.name}</div>
+    </button>
+  );
 };
 
 interface FileEntryProps {
@@ -50,12 +65,11 @@ const FileEntry: FC<FileEntryProps> = ({ file, onClick, selected }) => {
 };
 
 const userShortcuts = [
-  { name: "Documents", icon: "" },
-  { name: "Downloads", icon: "" },
-  { name: "Images", icon: "" },
-  { name: "Music", icon: "" },
-  { name: "Public", icon: "" },
-  { name: "Videos", icon: "" },
+  { name: "Documents", icon: documentsIcon },
+  { name: "Downloads", icon: downloadsIcon },
+  { name: "Images", icon: imagesIcon },
+  { name: "Music", icon: musicIcon },
+  { name: "Videos", icon: videosIcon },
 ];
 
 export const FileExplorer: FC<FileExplorerProps> = ({
@@ -65,7 +79,6 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   const [pathInputValue, setPathInputValue] = useState(
     `/${startingPath.join("/")}`
   );
-  const [isSearching, setIsSearching] = useState(false);
   const [backStack, setBackStack] = useState<string[][]>([startingPath]);
   const [forwardStack, setForwardStack] = useState<string[][]>([]);
   const root = useSelector((state: RootState) => state.fileSystem.root);
@@ -169,9 +182,23 @@ export const FileExplorer: FC<FileExplorerProps> = ({
     onChangePathInputValue(nextPath);
   }, [forwardStack, onChangePathInputValue, path]);
 
-  const handleToggleSearching = useCallback(() => {
-    setIsSearching(!isSearching);
-  }, [isSearching]);
+  const handleInputSubmit = useCallback(() => {
+    let finalInputPath = pathInputValue.split("/");
+
+    if (finalInputPath.length === 0) return;
+
+    finalInputPath = finalInputPath.filter((pathSlice) => pathSlice.length);
+
+    if (
+      findFolder(
+        root as Folder,
+        finalInputPath.filter((pathSlice) => pathSlice.length)
+      ) === null
+    )
+      return;
+
+    updatePath(finalInputPath.filter((pathSlice) => pathSlice.length));
+  }, [pathInputValue, root, updatePath]);
 
   return (
     <div className="file-explorer">
@@ -237,13 +264,19 @@ export const FileExplorer: FC<FileExplorerProps> = ({
               setPathInputValue(e.target.value),
             []
           )}
+          onKeyDown={useCallback(
+            (e: React.KeyboardEvent) => {
+              if (e.key === "Enter") handleInputSubmit();
+            },
+            [handleInputSubmit]
+          )}
         />
         <button>
           <img
             className="icon"
             src={searchIcon}
             alt="Search icon"
-            onClick={handleToggleSearching}
+            onClick={handleInputSubmit}
           />
         </button>
       </div>
@@ -251,8 +284,19 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         <div className="left-panel">
           <div className="title">Shortcuts</div>
           {userShortcuts.map((shortcut) => (
-            <ShortcutEntry shortcut={shortcut} key={shortcut.name} />
+            <ShortcutEntry
+              shortcut={shortcut}
+              key={shortcut.name}
+              onClick={() => updatePath([...HOME_PATH, shortcut.name])}
+            />
           ))}
+          <div className="divider" />
+          <div className="title">Devices</div>
+          <ShortcutEntry
+            shortcut={{ name: "Filesystem", icon: documentsIcon }}
+            key={"Filesystem"}
+            onClick={useCallback(() => updatePath([]), [updatePath])}
+          />
         </div>
         <div className="file-list" ref={fileListRef}>
           {currentDirectory?.files.map((file, index) => (

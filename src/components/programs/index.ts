@@ -1,3 +1,6 @@
+import { fileExplorerEntry } from "./FileExplorer";
+import systemIcon from "../../assets/img/system.png";
+
 export interface ProgramEntry {
   component: React.FC;
   name: string;
@@ -18,4 +21,10 @@ export interface ProgramCategory {
   icon: string;
 }
 
-export const programCategories: ProgramCategory[] = [];
+export const programCategories: ProgramCategory[] = [
+  {
+    name: "System",
+    programs: [fileExplorerEntry],
+    icon: systemIcon,
+  },
+];
