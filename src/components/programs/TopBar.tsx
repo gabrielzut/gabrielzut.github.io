@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useEffect, useState } from "react";
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import smallLogo from "../../assets/img/small-logo.png";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
@@ -76,20 +76,83 @@ function newMenu() {
   );
 }
 
-export const TopBar: FC<TopBarProps> = () => {
+export const TopBarClock: FC<{}> = () => {
   const [dateAndTime, setDateAndTime] = useState(
     new Date().toLocaleTimeString()
   );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDateAndTime(new Date().toLocaleTimeString());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <div className="clock">{dateAndTime}</div>;
+};
+
+export const TopBar: FC<TopBarProps> = () => {
   const openedPrograms = useSelector(
     (state: RootState) => state.processManager.programs
   );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [showArrows, setShowArrows] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const firstRender = useRef(true);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    setInterval(() => {
-      setDateAndTime(new Date().toLocaleTimeString());
-    }, 1000);
+  const checkOverflow = useCallback(() => {
+    const container = containerRef.current;
+
+    if (container) {
+      const { scrollWidth, clientWidth, scrollLeft } = container;
+
+      setShowArrows(scrollWidth > clientWidth);
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth);
+    }
   }, []);
+
+  const scroll = useCallback((direction: "left" | "right") => {
+    const container = containerRef.current;
+    if (container) {
+      const scrollAmount =
+        direction === "left"
+          ? -container.clientWidth / 2
+          : container.clientWidth / 2;
+      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+
+    checkOverflow();
+    const container = containerRef.current;
+
+    const resizeObserver = new ResizeObserver(() => checkOverflow());
+
+    if (container) {
+      resizeObserver.observe(container);
+      container.addEventListener("scroll", checkOverflow);
+    }
+
+    return () => {
+      window.removeEventListener("resize", checkOverflow);
+      resizeObserver.disconnect();
+
+      if (container) {
+        container.removeEventListener("scroll", checkOverflow);
+      }
+    };
+  }, [checkOverflow]);
+
+  useEffect(() => {}, []);
 
   return (
     <div className="top-bar">
@@ -115,18 +178,36 @@ export const TopBar: FC<TopBarProps> = () => {
           />
         </button>
         <div className="divider" />
-        <div className="app-menu">
-          {openedPrograms
-            .filter((program) => program.shouldShowInThePanel)
-            .map((program) => (
-              <AppMenuButton
-                key={program.id + "-app-menu"}
-                id={program.id}
-                name={program.name}
-                iconUrl={program.icon}
-                minimized={program.minimized}
-              />
-            ))}
+        <div className="app-menu-wrapper">
+          {showArrows && canScrollLeft && (
+            <button
+              onClick={() => scroll("left")}
+              className="navigation-button left"
+            >
+              &lt;
+            </button>
+          )}
+          <div className="app-menu" ref={containerRef}>
+            {openedPrograms
+              .filter((program) => program.shouldShowInThePanel)
+              .map((program) => (
+                <AppMenuButton
+                  key={program.id + "-app-menu"}
+                  id={program.id}
+                  name={program.name}
+                  iconUrl={program.icon}
+                  minimized={program.minimized}
+                />
+              ))}
+          </div>
+          {showArrows && canScrollRight && (
+            <button
+              onClick={() => scroll("right")}
+              className="navigation-button right"
+            >
+              &gt;
+            </button>
+          )}
         </div>
       </div>
       <div className="system-tray">
@@ -135,7 +216,7 @@ export const TopBar: FC<TopBarProps> = () => {
             {program.renderIcon()}
           </TrayIcon>
         ))}
-        <div className="clock">{dateAndTime}</div>
+        <TopBarClock />
       </div>
     </div>
   );

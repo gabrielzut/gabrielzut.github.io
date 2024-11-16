@@ -34,33 +34,8 @@ const initialState: ProcessManagerState = {
       0,
       false
     ),
-    new Program(
-      GenerateUUID(),
-      warnProgramEntry.name,
-      warnProgramEntry.component,
-      true,
-      undefined,
-      warnProgramEntry.defaultX,
-      warnProgramEntry.defaultY,
-      true,
-      warnProgramEntry.icon
-    ),
-    new Program(
-      GenerateUUID(),
-      fileExplorerEntry.name,
-      fileExplorerEntry.component,
-      true,
-      undefined,
-      fileExplorerEntry.defaultX,
-      fileExplorerEntry.defaultY,
-      true,
-      fileExplorerEntry.icon,
-      false,
-      fileExplorerEntry.defaultWidth,
-      fileExplorerEntry.defaultHeight,
-      fileExplorerEntry.minWidth,
-      fileExplorerEntry.minHeight
-    ),
+    Program.of(fileExplorerEntry),
+    Program.of(warnProgramEntry),
   ],
   currentZIndex: 1,
 };

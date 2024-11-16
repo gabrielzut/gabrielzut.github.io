@@ -1,5 +1,7 @@
 import React from "react";
 import DraggableWindow from "./DraggableWindow";
+import { ProgramEntry } from "../programs";
+import { GenerateUUID } from "../../utils/generators";
 
 export class Program<T extends React.FC<any>> {
   id: string;
@@ -19,6 +21,25 @@ export class Program<T extends React.FC<any>> {
   shouldShowInThePanel = true;
   minWidth = 200;
   minHeight = 200;
+
+  public static of(entry: ProgramEntry) {
+    return new Program(
+      GenerateUUID(),
+      entry.name,
+      entry.component,
+      entry.shouldShowFrame,
+      entry.trayIcon,
+      entry.defaultX,
+      entry.defaultY,
+      true,
+      entry.icon,
+      false,
+      entry.defaultWidth,
+      entry.defaultHeight,
+      entry.minWidth,
+      entry.minHeight
+    );
+  }
 
   constructor(
     id: string,
@@ -81,7 +102,12 @@ export class Program<T extends React.FC<any>> {
       </DraggableWindow>
     ) : (
       <div
-        style={{ top: this.y, left: this.x, position: "absolute", zIndex: 999999 }}
+        style={{
+          top: this.y,
+          left: this.x,
+          position: "absolute",
+          zIndex: 999999,
+        }}
         key={this.id}
       >
         <ComponentToRender {...(props as React.ComponentProps<T>)} />

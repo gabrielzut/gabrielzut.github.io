@@ -1,19 +1,30 @@
-import { FC, useCallback, useEffect, useMemo, useRef } from "react";
-import { closeProgram } from "../../redux/reducers/ProcessManagerReducer";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  addProgram,
+  closeProgram,
+} from "../../redux/reducers/ProcessManagerReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
-import { programCategories, ProgramEntry } from ".";
+import { programCategories, ProgramCategory, ProgramEntry } from ".";
 import shutDownIcon from "../../assets/img/shutdown.gif";
+import executableIcon from "../../assets/img/executable.png";
+import simpleArrowIcon from "../../assets/img/simple-arrow.png";
 import { shutDownSystem } from "../../redux/reducers/SystemReducer";
+import { Program } from "../general/Program";
 
-interface ProgramCategoryProps {
+interface ProgramCategoryEntryProps {
   name: string;
   icon: string;
+  onClick: React.MouseEventHandler;
 }
 
-export const ProgramCategory: FC<ProgramCategoryProps> = ({ name, icon }) => {
+export const ProgramCategoryEntry: FC<ProgramCategoryEntryProps> = ({
+  name,
+  icon,
+  onClick,
+}) => {
   return (
-    <div className="program-category-entry">
+    <div className="program-category-entry" onClick={onClick}>
       <img alt={`program category ${name} menu icon`} src={icon}></img>
       {name}
     </div>
@@ -25,6 +36,7 @@ interface MainMenuProps {}
 export const MainMenu: FC<MainMenuProps> = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
+  const [expandedCategory, setExpandedCategory] = useState<ProgramCategory>();
   const openedPrograms = useSelector(
     (state: RootState) => state.processManager.programs
   );
@@ -35,6 +47,18 @@ export const MainMenu: FC<MainMenuProps> = () => {
 
   useEffect(() => {
     menuRef.current?.focus();
+  }, []);
+
+  const handleOpenProgram = useCallback(
+    (program: ProgramEntry) => {
+      dispatch(addProgram(Program.of(program)));
+      if (id) dispatch(closeProgram(id));
+    },
+    [dispatch, id]
+  );
+
+  const handleCloseExpandedCategory = useCallback(() => {
+    setExpandedCategory(undefined);
   }, []);
 
   return (
@@ -59,15 +83,46 @@ export const MainMenu: FC<MainMenuProps> = () => {
           ZutiOS<b>98</b>
         </div>
       </div>
-      <input type="text" className="search-bar" placeholder="Search program" />
+      <input
+        name="menu-search"
+        type="text"
+        className="search-bar"
+        placeholder="Search program"
+      />
       <div className="program-list">
-        {programCategories.map((category) => (
-          <ProgramCategory
-            name={category.name}
-            key={category.name + "-category"}
-            icon={category.icon}
-          />
-        ))}
+        {expandedCategory ? (
+          <>
+            <div className="program-category-entry-expanded">
+              <button onClick={handleCloseExpandedCategory}>
+                <img alt="go-back-icon" src={simpleArrowIcon} />
+              </button>
+              <img
+                alt={`${expandedCategory.name} category expanded icon`}
+                src={expandedCategory.icon}
+              />
+              {expandedCategory.name}
+            </div>
+            {expandedCategory.programs.map((program) => (
+              <ProgramCategoryEntry
+                onClick={() => handleOpenProgram(program)}
+                name={program.name}
+                key={program.name + "-program"}
+                icon={program.icon ?? executableIcon}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            {programCategories.map((category) => (
+              <ProgramCategoryEntry
+                onClick={() => setExpandedCategory(category)}
+                name={category.name}
+                key={category.name + "-category"}
+                icon={category.icon}
+              />
+            ))}
+          </>
+        )}
       </div>
       <button
         className="shutdown-button"

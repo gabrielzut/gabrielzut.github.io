@@ -42,6 +42,32 @@
       background-color: rgb(9, 9, 121);
       color: white;
     }
+
+    &-expanded {
+      height: 36px;
+      text-align: left;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgb(80, 80, 80);
+      justify-content: center;
+      position: relative;
+
+      button {
+        position: absolute;
+        left: 0;
+        background-color: transparent;
+        border: none;
+
+        &:active,
+        &:hover {
+          background-color: rgb(120, 120, 120);
+          color: white;
+        }
+      }
+    }
   }
 
   .vertical-name {

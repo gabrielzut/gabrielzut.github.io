@@ -108,6 +108,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    border: 2px solid transparent;
+
+    &.new {
+      outline: 1px dotted rgb(80, 80, 80);
+
+      input {
+        width: 70px;
+        background-color: transparent;
+        border: none !important;
+        outline: 1px dotted rgb(80, 80, 80);
+        text-align: center;
+      }
+    }
 
     &.selected {
       background-color: rgb(88, 88, 228);

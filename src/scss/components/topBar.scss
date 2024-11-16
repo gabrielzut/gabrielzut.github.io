@@ -24,7 +24,7 @@
     height: 36px;
     box-shadow: inset 1px 1px rgb(192, 192, 192),
       inset -1px -1px rgb(80, 80, 80);
-    margin: 3px 10px 0 10px;
+    margin: 3px 5px 0 5px;
   }
 
   .start-button {
@@ -52,10 +52,40 @@
     }
   }
 
+  .navigation-button {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    background-color: rgb(160, 160, 160);
+    border: 1px solid rgb(80, 80, 80);
+
+    &:hover {
+      background-color: rgb(147, 147, 147);
+    }
+
+    &.left {
+      left: 5px;
+      transform: translateY(-50%);
+    }
+
+    &.right {
+      right: 5px;
+      transform: translateY(-50%);
+    }
+  }
+
   .app-menu {
+    &-wrapper {
+      position: relative;
+      overflow: hidden;
+      padding-bottom: 3px;
+    }
+
     padding: 3px 0;
     display: flex;
     gap: 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
 
     &-button {
       display: flex;
@@ -67,6 +97,7 @@
       box-shadow: inset 2px 2px rgb(80, 80, 80),
         inset -2px -2px rgb(192, 192, 192);
       background-color: rgba(180, 180, 180, 1);
+      flex: 0 0 auto;
 
       &:active,
       &.minimized {
@@ -93,6 +124,7 @@
   .system-tray {
     box-shadow: inset 1px 1px rgb(80, 80, 80),
       inset -1px -1px rgb(192, 192, 192);
+    margin-left: 5px;
     background-color: rgb(170, 170, 170);
     height: 36px;
     margin-right: 5px;

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { EventHandler, useEffect } from "react";
 import { FC, useCallback, useState } from "react";
 
 interface DropDownOption {
@@ -89,11 +89,21 @@ export const WindowOptions: FC<WindowOptionsProps> = ({ options }) => {
   );
 
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (e: React.MouseEvent) => {
       setOpenDropdown(null);
+      if ((e.target as Element)?.className?.startsWith("dropdown-option")) {
+        (e.target as HTMLButtonElement).click();
+      }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside as EventHandler<any>
+    );
+    return () =>
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside as EventHandler<any>
+      );
   }, []);
 
   return (
