@@ -1,11 +1,11 @@
 export interface File {
   name: string;
   type: string;
-  size: number;
   icon?: string;
+  content: string;
 }
 
-export interface Folder extends File {
+export interface Folder extends Omit<File, "content"> {
   type: "folder";
   files: GeneralFile[];
 }

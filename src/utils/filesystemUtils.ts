@@ -1,8 +1,22 @@
 import { Folder, GeneralFile } from "../model/file";
 import folderIcon from "../assets/img/folder.gif";
+import { store } from "../redux";
 
 export function getFileIcon(type: string) {
   if (type === "folder") return folderIcon;
+}
+
+export function findFileOrFolder(path: string[]): GeneralFile | null {
+  if (path.length === 0) return null;
+
+  const fileName = path[0];
+  const containingFolderPath = path.slice(1);
+  const containingFolder = findFolder(
+    store.getState().fileSystem.root as Folder,
+    containingFolderPath
+  );
+
+  return containingFolder?.files.find((file) => file.name === fileName) || null;
 }
 
 export function findFolder(

@@ -9,88 +9,73 @@ export interface ProcessManagerState {
 const initialState: ProcessManagerState = {
   root: {
     name: "/",
-    size: 0,
     type: "folder",
     files: [
       {
         name: "bin",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "etc",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "sbin",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "usr",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "var",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "dev",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "home",
-        size: 0,
         type: "folder",
         files: [
           {
             name: "user",
-            size: 0,
             type: "folder",
             files: [
               {
                 name: "Documents",
-                size: 0,
                 type: "folder",
                 files: [],
               },
               {
                 name: "Downloads",
-                size: 0,
                 type: "folder",
                 files: [],
               },
               {
                 name: "Images",
-                size: 0,
                 type: "folder",
                 files: [],
               },
               {
                 name: "Music",
-                size: 0,
                 type: "folder",
                 files: [],
               },
               {
                 name: "Public",
-                size: 0,
                 type: "folder",
                 files: [],
               },
               {
                 name: "Videos",
-                size: 0,
                 type: "folder",
                 files: [],
               },
@@ -100,31 +85,26 @@ const initialState: ProcessManagerState = {
       },
       {
         name: "lib",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "mnt",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "opt",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "proc",
-        size: 0,
         type: "folder",
         files: [],
       },
       {
         name: "root",
-        size: 0,
         type: "folder",
         files: [],
       },
@@ -148,9 +128,21 @@ export const fileSystemReducerSlice = createSlice({
         targetFolder.files.push(file);
       }
     },
+    deleteFile: (state, { payload }: PayloadAction<string[]>) => {
+      const targetFolder = findFolder(
+        state.root as Folder,
+        payload.slice(0, -1)
+      );
+
+      if (targetFolder) {
+        targetFolder.files = targetFolder.files.filter(
+          (file) => file.name === payload.slice(-1)[0]
+        );
+      }
+    },
   },
 });
 
-export const { addFile } = fileSystemReducerSlice.actions;
+export const { addFile, deleteFile } = fileSystemReducerSlice.actions;
 
 export default fileSystemReducerSlice.reducer;

@@ -263,7 +263,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
             addFile({
               file: {
                 name: getUniqueFileName(currentDirectory.files, value),
-                size: 0,
+                content: "",
                 icon:
                   creatingFileType === "folder" ? folderIcon : blankFileIcon,
                 type: creatingFileType,
