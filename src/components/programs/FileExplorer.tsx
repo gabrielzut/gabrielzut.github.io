@@ -11,7 +11,7 @@ import downloadsIcon from "../../assets/img/downloads.png";
 import imagesIcon from "../../assets/img/images.png";
 import musicIcon from "../../assets/img/music.png";
 import videosIcon from "../../assets/img/videos.png";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "../../redux";
 import { Folder, GeneralFile } from "../../model/file";
 import {
@@ -19,7 +19,7 @@ import {
   getFileIcon,
   getUniqueFileName,
 } from "../../utils/filesystemUtils";
-import { addFile } from "../../redux/reducers/FileSystemReducer";
+import { mkdir, touch } from "../../utils/binaries";
 
 interface FileExplorerProps {
   startingPath?: string[];
@@ -82,7 +82,10 @@ const FileEntryForm: FC<FileEntryFormProps> = ({ onSubmit, type }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(0, inputRef.current.value.length);
+    }, 50);
   }, []);
 
   return (
@@ -146,7 +149,6 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   );
   const fileListRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const dispatch = useDispatch();
 
   useEffect(() => {
     setSelectedFiles([]);
@@ -188,7 +190,11 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 
   const handleSelectFiles = useCallback(
     (index: number, fileName: string, event: React.MouseEvent) => {
-      if (event.detail === 2) {
+      if (
+        event.detail === 2 &&
+        currentDirectory?.files.find((file) => file.name === fileName)?.type ===
+          "folder"
+      ) {
         updatePath([...path, fileName]);
       }
 
@@ -257,26 +263,15 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 
   const handleSubmitNewFile = useCallback(
     (value: string, isCancel: boolean) => {
-      if (!isCancel && value.length && creatingFileType) {
-        if (currentDirectory?.files.some((file) => file))
-          dispatch(
-            addFile({
-              file: {
-                name: getUniqueFileName(currentDirectory.files, value),
-                content: "",
-                icon:
-                  creatingFileType === "folder" ? folderIcon : blankFileIcon,
-                type: creatingFileType,
-                ...(creatingFileType === "folder" ? { files: [] } : {}),
-              },
-              path,
-            })
-          );
+      if (!isCancel && value.length && creatingFileType && currentDirectory) {
+        if (creatingFileType === "file")
+          touch(path, getUniqueFileName(currentDirectory.files, value));
+        else mkdir(path, getUniqueFileName(currentDirectory.files, value));
       }
 
       setCreatingFileType(undefined);
     },
-    [creatingFileType, currentDirectory, dispatch, path]
+    [creatingFileType, currentDirectory, path]
   );
 
   return (

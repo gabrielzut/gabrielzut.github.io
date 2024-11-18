@@ -1,4 +1,4 @@
-import { Folder, File, GeneralFile } from "../model/file";
+import { Folder, File } from "../model/file";
 import { store } from "../redux";
 import { addFile, deleteFile } from "../redux/reducers/FileSystemReducer";
 import {
@@ -6,8 +6,8 @@ import {
   findFolder,
   getUniqueFileName,
 } from "./filesystemUtils";
-import folderIcon from "../../assets/img/folder.gif";
-import blankFileIcon from "../../assets/img/blankFile.png";
+import folderIcon from "../assets/img/folder.gif";
+import blankFileIcon from "../assets/img/blankFile.png";
 
 function createFileOrFolder(
   path: string[],
@@ -84,101 +84,57 @@ export function cat(path: string[]) {
   return (file as File).content;
 }
 
-// export function cp(
-//   path: string[],
-//   destinationPath: string[],
-//   { r = false, f = false, u = false } = {},
-//   currentDir
-// ) {
-//   function clone(file: GeneralFile): GeneralFile {
-//     if (file.type === "file") {
-//       return { ...file };
-//     } else {
-//       return {
-//         ...(file as Folder),
-//         files: (file as Folder).files.map(clone),
-//       };
-//     }
-//   }
+export function cp(
+  sourcePath: string[],
+  destPath: string[],
+  { r = false, f = false } = {}
+) {
+  function copyFileOrDir(source: string[], dest: string[]) {
+    const file = findFileOrFolder(source);
 
-//   try {
-//     const source = findFileOrFolder(path);
-//     if (!source)
-//       throw new Error(`cp: No such file or directory: /${path.join("/")}`);
-//     const parentFolder = findFolder(
-//       store.getState().fileSystem.root as Folder,
-//       path.slice(0, -1)
-//     );
-//     const destName = destArray[destArray.length - 1];
+    if (!file)
+      throw new Error(`cat: /${source.join("/")}: No such file or directory`);
 
-//     const destination = findFileOrFolder(destinationPath);
-//     if (!destination)
-//       throw new Error(
-//         `cp: No such file or directory: /${destinationPath.join("/")}`
-//       );
-//     const existingDest = (destination as Folder).files.find(
-//       (file) => file.name === destName
-//     );
+    if (file.type === "folder") {
+      if (!r) {
+        throw new Error(
+          `cp: Cannot copy directory '${source.join("/")}' without -r`
+        );
+      }
 
-//     if (source.type === "folder") {
-//       if (!r) {
-//         throw new Error(
-//           `cp: Cannot copy '${source.name}': Is a directory (use -r to copy directories)`
-//         );
-//       }
+      try {
+        mkdir(dest.slice(0, -1), dest.slice(-1)[0]);
+      } catch {}
 
-//       if (existingDest && existingDest.type !== "folder") {
-//         if (!f) {
-//           throw new Error(
-//             `Cannot overwrite non-directory '${destName}' with directory`
-//           );
-//         }
+      for (const item of (file as Folder).files) {
+        copyFileOrDir([...source, item.name], [...dest, item.name]);
+      }
+    } else {
+      const destFile = findFileOrFolder(dest);
 
-//         (destination as Folder).files = (destination as Folder).files.filter(
-//           (file) => file.name !== destName
-//         );
-//       }
+      if (destFile) {
+        if (!f) {
+          throw new Error(`cp: File '${dest.join("/")}' already exists`);
+        }
+        rm([dest], { r: true, f: true });
+      }
 
-//       if (!existingDest) {
-//         mkdir(destinationPath, destName);
-//       }
+      createFileOrFolder(
+        dest,
+        file?.name,
+        file?.type as "file" | "folder",
+        "cp"
+      );
+    }
+  }
 
-//       (source as Folder).files.forEach((file) => {
-//         cp(
-//           [...path, file.name],
-//           [destinationPath, file.name],
-//           {r, f, u},
-//           currentDir
-//         );
-//       });
-//       return;
-//     }
-
-//     // Lógica para arquivos
-//     if (source.type === "file") {
-//       if (existingDest && existingDest.type === "file") {
-//         if (!force && !update) {
-//           throw new Error(
-//             `File '${destName}' already exists (use -f to overwrite)`
-//           );
-//         }
-
-//         if (update && existingDest.mtime >= source.mtime) {
-//           return; // Não copia se o arquivo do destino for mais recente ou igual
-//         }
-//       }
-
-//       // Adiciona ou substitui o arquivo
-//       const clonedFile = clone(source);
-//       destination.files = destination.files.filter(
-//         (file) => file.name !== destName
-//       ); // Remove se já existir
-//       clonedFile.name = destName; // Garante que o nome do destino está correto
-//       destination.files.push(clonedFile);
-//     }
-//   } catch (err) {
-//     throw new Error(
-//       `Error copying '${sourcePath}' to '${destPath}': ${err.message}`
-//     );
-//   }
-// }
+  try {
+    copyFileOrDir(sourcePath, destPath);
+  } catch (err: any) {
+    throw new Error(
+      `Error copying '${sourcePath.join("/")}' to '${destPath.join("/")}': ${
+        err.message
+      }`
+    );
+  }
+}
