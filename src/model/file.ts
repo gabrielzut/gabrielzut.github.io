@@ -3,9 +3,10 @@ export interface File {
   type: string;
   icon?: string;
   content: string;
+  command?: Function;
 }
 
-export interface Folder extends Omit<File, "content"> {
+export interface Folder extends Omit<Omit<File, "content">, "command"> {
   type: "folder";
   files: GeneralFile[];
 }

@@ -1,6 +1,8 @@
-import { Folder, GeneralFile } from "../model/file";
+import { File, Folder, GeneralFile } from "../model/file";
 import folderIcon from "../assets/img/folder.gif";
+import blankFileIcon from "../assets/img/blankFile.png";
 import { store } from "../redux";
+import { addFile } from "../redux/reducers/FileSystemReducer";
 
 export function getFileIcon(type: string) {
   if (type === "folder") return folderIcon;
@@ -9,8 +11,8 @@ export function getFileIcon(type: string) {
 export function findFileOrFolder(path: string[]): GeneralFile | null {
   if (path.length === 0) return null;
 
-  const fileName = path[0];
-  const containingFolderPath = path.slice(1);
+  const fileName = path[path.length - 1];
+  const containingFolderPath = path.slice(0, -1);
   const containingFolder = findFolder(
     store.getState().fileSystem.root as Folder,
     containingFolderPath
@@ -52,4 +54,48 @@ export function getUniqueFileName(
   }
 
   return uniqueName;
+}
+
+export function calculateFileSize(file: GeneralFile) {
+  if (file.type === "folder") {
+    return (file as Folder).files
+      .filter((subFile) => subFile.type === "file")
+      .map((subFile) => (subFile as File).content.length)
+      .reduce((prev, curr) => prev + curr);
+  } else {
+    return (file as File).content.length;
+  }
+}
+
+export function createFileOrFolder(
+  path: string[],
+  name: string,
+  type: "file" | "folder",
+  command: string,
+  content = "",
+  files: GeneralFile[] = []
+) {
+  const folder = findFolder(store.getState().fileSystem.root as Folder, path);
+
+  if (!folder)
+    throw new Error(
+      `${command}: No such file or directory: /${path.join("/")}`
+    );
+
+  const finalFileName = getUniqueFileName(folder.files, name);
+
+  store.dispatch(
+    addFile({
+      file: {
+        name: finalFileName,
+        content,
+        icon: type === "folder" ? folderIcon : blankFileIcon,
+        type: type,
+        ...(type === "folder" ? { files } : {}),
+      },
+      path,
+    })
+  );
+
+  return finalFileName;
 }

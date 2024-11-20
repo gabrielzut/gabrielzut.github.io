@@ -2,12 +2,14 @@ import { Action, configureStore, ThunkAction } from "@reduxjs/toolkit";
 import SystemReducer from "./reducers/SystemReducer";
 import ProcessManagerReducer from "./reducers/ProcessManagerReducer";
 import FileSystemReducer from "./reducers/FileSystemReducer";
+import ClipboardReducer from "./reducers/ClipboardReducer";
 
 export const store = configureStore({
   reducer: {
     system: SystemReducer,
     processManager: ProcessManagerReducer,
     fileSystem: FileSystemReducer,
+    clipboard: ClipboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

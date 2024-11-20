@@ -22,7 +22,14 @@ const initialState: ProcessManagerState = {
       undefined,
       0,
       0,
-      false
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true
     ),
     new Program(
       GenerateUUID(),
@@ -32,7 +39,14 @@ const initialState: ProcessManagerState = {
       VolumeTrayIcon,
       0,
       0,
-      false
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true
     ),
     Program.of(fileExplorerEntry),
     Program.of(warnProgramEntry),

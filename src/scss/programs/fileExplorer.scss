@@ -99,32 +99,66 @@
   padding: 10px 15px;
   height: fit-content;
 
+  &.list {
+    .file-entry {
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      padding: 0 15px;
+      height: 40px;
+      border-width: 1px;
+      border-style: solid;
+      border-color: transparent;
+      border-bottom-color: rgb(192, 192, 192);
+      gap: 10px;
+
+      .icon {
+        height: 32px;
+      }
+    }
+  }
+
+  &.grid {
+    .file-entry {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      padding: 0 15px;
+      height: 70px;
+      min-width: 70px;
+      border-width: 2px;
+      border-style: solid;
+      border-color: transparent;
+
+      input: {
+        width: 70px;
+        text-align: center;
+      }
+    }
+  }
+
   .file-entry {
-    width: fit-content;
-    padding: 0 15px;
-    height: 70px;
-    min-width: 70px;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid transparent;
 
     &.new {
       outline: 1px dotted rgb(80, 80, 80);
 
       input {
-        width: 70px;
         background-color: transparent;
         border: none !important;
         outline: 1px dotted rgb(80, 80, 80);
-        text-align: center;
       }
+    }
+
+    &.cut {
+      filter: opacity(0.6);
     }
 
     &.selected {
       background-color: rgb(88, 88, 228);
-      border: 2px dotted rgb(172, 172, 172);
+      border-color: rgb(172, 172, 172);
+      border-style: dotted;
 
       .file-name {
         color: white;

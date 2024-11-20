@@ -32,6 +32,7 @@ interface DraggableWindowProps {
   icon?: string;
   minWidth?: number;
   minHeight?: number;
+  childProps?: { [key: string]: any };
 }
 
 interface WindowTitleButtonProps {
@@ -73,6 +74,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
   icon,
   minWidth = 200,
   minHeight = 200,
+  childProps = {},
 }) => {
   const [position, setPosition] = useState({
     x: defaultX,
@@ -219,16 +221,13 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
     setIsMaximized(!isMaximized);
   }, [defaultHeight, defaultWidth, defaultX, defaultY, isMaximized]);
 
-  const handleChangeActiveWindow = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (isActiveWindow) return;
-      else {
-        setZIndex(currentZIndex);
-        dispatch(incrementZIndex());
-      }
-    },
-    [currentZIndex, dispatch, isActiveWindow]
-  );
+  const handleChangeActiveWindow = useCallback(() => {
+    if (isActiveWindow) return;
+    else {
+      setZIndex(currentZIndex);
+      dispatch(incrementZIndex());
+    }
+  }, [currentZIndex, dispatch, isActiveWindow]);
 
   return (
     <div
@@ -279,7 +278,15 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
           />
         </div>
       </div>
-      {children}
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement<any>(child, {
+            ...childProps,
+            uid: windowId,
+          });
+        }
+        return child;
+      })}
       <div
         onMouseDown={useCallback(
           (e: React.MouseEvent<HTMLDivElement>) =>

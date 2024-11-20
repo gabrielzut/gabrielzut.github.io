@@ -2,7 +2,7 @@ import { fileExplorerEntry } from "./FileExplorer";
 import systemIcon from "../../assets/img/system.png";
 
 export interface ProgramEntry {
-  component: React.FC;
+  component: React.FC<any>;
   name: string;
   shouldShowFrame: boolean;
   defaultWidth?: number;

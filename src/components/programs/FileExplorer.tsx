@@ -11,7 +11,7 @@ import downloadsIcon from "../../assets/img/downloads.png";
 import imagesIcon from "../../assets/img/images.png";
 import musicIcon from "../../assets/img/music.png";
 import videosIcon from "../../assets/img/videos.png";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
 import { Folder, GeneralFile } from "../../model/file";
 import {
@@ -19,10 +19,12 @@ import {
   getFileIcon,
   getUniqueFileName,
 } from "../../utils/filesystemUtils";
-import { mkdir, touch } from "../../utils/binaries";
+import { cp, kill, mkdir, mv, rm, touch } from "../../utils/binaries";
+import { copy, cut, paste } from "../../redux/reducers/ClipboardReducer";
 
 interface FileExplorerProps {
   startingPath?: string[];
+  uid: string;
 }
 
 const HOME_PATH = ["home", "user"];
@@ -49,12 +51,13 @@ interface FileEntryProps {
   file: GeneralFile;
   onClick: (event: React.MouseEvent) => void;
   selected: boolean;
+  cut: boolean;
 }
 
-const FileEntry: FC<FileEntryProps> = ({ file, onClick, selected }) => {
+const FileEntry: FC<FileEntryProps> = ({ file, onClick, selected, cut }) => {
   return (
     <div
-      className={`file-entry ${selected ? "selected" : ""}`}
+      className={`file-entry ${selected ? "selected" : ""} ${cut ? "cut" : ""}`}
       onClick={onClick}
     >
       <div className="icon">
@@ -130,11 +133,15 @@ const userShortcuts = [
 
 export const FileExplorer: FC<FileExplorerProps> = ({
   startingPath = HOME_PATH,
+  uid,
 }) => {
   const [path, setPath] = useState(startingPath);
   const [pathInputValue, setPathInputValue] = useState(
     `/${startingPath.join("/")}`
   );
+  const [cutFiles, setCutFiles] = useState<string[]>([]);
+  const [showHiddenFiles, setShowHiddenFiles] = useState(false);
+  const [isGridView, setIsGridView] = useState(true);
   const [backStack, setBackStack] = useState<string[][]>([startingPath]);
   const [forwardStack, setForwardStack] = useState<string[][]>([]);
   const root = useSelector((state: RootState) => state.fileSystem.root);
@@ -142,19 +149,30 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
     null
   );
+  const { copiedValue, setForDeletion } = useSelector(
+    (state: RootState) => state.clipboard
+  );
   const [creatingFileType, setCreatingFileType] = useState<"folder" | "file">();
   const currentDirectory = useMemo(
     () => findFolder(root as Folder, path),
     [path, root]
   );
+  const currFiles = useMemo(
+    () =>
+      currentDirectory?.files.filter(
+        (file) => showHiddenFiles || !file.name.startsWith(".")
+      ) ?? [],
+    [currentDirectory?.files, showHiddenFiles]
+  );
   const fileListRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     setSelectedFiles([]);
   }, [path]);
 
-  const handleClickOutside = useCallback((event: MouseEvent) => {
+  const handleClickOutsideFileList = useCallback((event: MouseEvent) => {
     const isClickOutsideFileList =
       fileListRef.current &&
       !fileListRef.current.contains(event.target as Node);
@@ -167,11 +185,11 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   }, []);
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutsideFileList);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutsideFileList);
     };
-  }, [handleClickOutside]);
+  }, [handleClickOutsideFileList]);
 
   const onChangePathInputValue = useCallback(
     (value: string[]) => setPathInputValue(`/${value.join("/")}`),
@@ -192,8 +210,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
     (index: number, fileName: string, event: React.MouseEvent) => {
       if (
         event.detail === 2 &&
-        currentDirectory?.files.find((file) => file.name === fileName)?.type ===
-          "folder"
+        currFiles.find((file) => file.name === fileName)?.type === "folder"
       ) {
         updatePath([...path, fileName]);
       }
@@ -201,9 +218,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
       if (event.shiftKey && lastSelectedIndex !== null) {
         const start = Math.min(lastSelectedIndex, index);
         const end = Math.max(lastSelectedIndex, index);
-        const range = currentDirectory?.files
-          .slice(start, end + 1)
-          .map((file) => file.name);
+        const range = currFiles.slice(start, end + 1).map((file) => file.name);
         setSelectedFiles((prevSelected) =>
           Array.from(new Set([...prevSelected, ...(range ?? [])]))
         );
@@ -219,7 +234,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         setLastSelectedIndex(index);
       }
     },
-    [currentDirectory?.files, lastSelectedIndex, path, updatePath]
+    [currFiles, lastSelectedIndex, path, updatePath]
   );
 
   const handleGoBack = useCallback(() => {
@@ -291,28 +306,113 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                   onClick: () => setCreatingFileType("file"),
                 },
                 { name: "Open terminal" },
-                { name: "Exit" },
+                { name: "Exit", onClick: () => kill(uid) },
               ],
             },
             {
               name: "Edit",
               dropdownOptions: [
-                { name: "Copy" },
-                { name: "Paste" },
-                { name: "Cut" },
-                { name: "Move to the thrash bin" },
+                {
+                  name: "Copy",
+                  onClick: () => {
+                    setCutFiles([]);
+
+                    dispatch(
+                      copy(
+                        selectedFiles
+                          .map((file) => path.join("/") + "/" + file)
+                          .join(",")
+                      )
+                    );
+                  },
+                },
+                {
+                  name: "Paste",
+                  onClick: () => {
+                    if (copiedValue) {
+                      const files = copiedValue
+                        .split(",")
+                        .map((fileText) => fileText.split("/").filter(Boolean));
+
+                      const differentPathFiles = files.filter(
+                        (file) => file.slice(0, -1).join("/") !== path.join("/")
+                      );
+
+                      for (const file of setForDeletion
+                        ? differentPathFiles
+                        : files) {
+                        cp(file, path, { r: true, f: true });
+                      }
+
+                      if (setForDeletion && differentPathFiles.length)
+                        rm(differentPathFiles, { r: true, f: true });
+                      dispatch(paste());
+                      setCutFiles([]);
+                    }
+                  },
+                },
+                {
+                  name: "Cut",
+                  onClick: () => {
+                    const files = selectedFiles.map(
+                      (file) => path.join("/") + "/" + file
+                    );
+
+                    setCutFiles(files);
+                    dispatch(cut(files.join(",")));
+                  },
+                },
+                {
+                  name: "Move to the thrash bin",
+                  onClick: () => {
+                    for (const file of selectedFiles) {
+                      if (
+                        [
+                          "home",
+                          "home/.local",
+                          "home/.local/share",
+                          "home/.local/share/Trash",
+                        ].includes([...path, file].join("/"))
+                      )
+                        return;
+
+                      mv(
+                        [...path, file],
+                        ["home", "user", ".local", "share", "Trash"],
+                        { f: true }
+                      );
+                    }
+                  },
+                },
               ],
             },
             {
               name: "View",
               dropdownOptions: [
-                { name: "Display as list" },
-                { name: "Display as grid" },
+                {
+                  name: "Display as list",
+                  onClick: () => setIsGridView(false),
+                },
+                { name: "Display as grid", onClick: () => setIsGridView(true) },
+                {
+                  name: showHiddenFiles
+                    ? "Hide hidden files"
+                    : "Show hidden files",
+                  onClick: () => setShowHiddenFiles((prevValue) => !prevValue),
+                },
               ],
             },
             { name: "Help", dropdownOptions: [{ name: "About" }] },
           ],
-          []
+          [
+            copiedValue,
+            dispatch,
+            path,
+            selectedFiles,
+            setForDeletion,
+            showHiddenFiles,
+            uid,
+          ]
         )}
       />
       <div className="navigation-bar">
@@ -382,13 +482,17 @@ export const FileExplorer: FC<FileExplorerProps> = ({
             onClick={useCallback(() => updatePath([]), [updatePath])}
           />
         </div>
-        <div className="file-list" ref={fileListRef}>
-          {currentDirectory?.files.map((file, index) => (
+        <div
+          className={`file-list ${isGridView ? "grid" : "list"}`}
+          ref={fileListRef}
+        >
+          {currFiles.map((file, index) => (
             <FileEntry
               onClick={(e) => handleSelectFiles(index, file.name, e)}
               key={file.name}
               file={file}
               selected={selectedFiles.includes(file.name)}
+              cut={cutFiles.includes([...path, file.name].join("/"))}
             />
           ))}
           {creatingFileType && (

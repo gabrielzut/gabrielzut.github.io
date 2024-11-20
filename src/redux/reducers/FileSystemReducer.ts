@@ -1,6 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { GeneralFile, Folder } from "../../model/file";
 import { findFolder } from "../../utils/filesystemUtils";
+import { defaultBinaries } from "../../utils/binaries";
+import executableIcon from "../../assets/img/executable.png";
 
 export interface ProcessManagerState {
   root: GeneralFile;
@@ -14,7 +16,15 @@ const initialState: ProcessManagerState = {
       {
         name: "bin",
         type: "folder",
-        files: [],
+        files: [
+          ...defaultBinaries.map((binary) => ({
+            name: binary.name,
+            type: "file",
+            content: binary.toString(),
+            command: binary,
+            icon: executableIcon,
+          })),
+        ],
       },
       {
         name: "etc",
@@ -49,6 +59,23 @@ const initialState: ProcessManagerState = {
             name: "user",
             type: "folder",
             files: [
+              {
+                name: ".local",
+                type: "folder",
+                files: [
+                  {
+                    name: "share",
+                    type: "folder",
+                    files: [
+                      {
+                        name: "Trash",
+                        type: "folder",
+                        files: [],
+                      },
+                    ],
+                  },
+                ],
+              },
               {
                 name: "Documents",
                 type: "folder",
@@ -136,7 +163,7 @@ export const fileSystemReducerSlice = createSlice({
 
       if (targetFolder) {
         targetFolder.files = targetFolder.files.filter(
-          (file) => file.name === payload.slice(-1)[0]
+          (file) => file.name !== payload.slice(-1)[0]
         );
       }
     },

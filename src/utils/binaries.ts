@@ -1,43 +1,34 @@
-import { Folder, File } from "../model/file";
+import { Folder, File, GeneralFile } from "../model/file";
 import { store } from "../redux";
-import { addFile, deleteFile } from "../redux/reducers/FileSystemReducer";
+import { deleteFile } from "../redux/reducers/FileSystemReducer";
 import {
+  calculateFileSize,
+  createFileOrFolder,
   findFileOrFolder,
-  findFolder,
-  getUniqueFileName,
 } from "./filesystemUtils";
-import folderIcon from "../assets/img/folder.gif";
-import blankFileIcon from "../assets/img/blankFile.png";
+import { closeProgram } from "../redux/reducers/ProcessManagerReducer";
+import { system } from "./constants";
 
-function createFileOrFolder(
-  path: string[],
-  name: string,
-  type: "file" | "folder",
-  command: string
-) {
-  const folder = findFolder(store.getState().fileSystem.root as Folder, path);
+export const defaultBinaries = [
+  cat,
+  cp,
+  date,
+  echo,
+  hostname,
+  ls,
+  kill,
+  mkdir,
+  mv,
+  ps,
+  pwd,
+  rm,
+  sh,
+  touch,
+  uname,
+];
 
-  if (!folder)
-    throw new Error(
-      `${command}: No such file or directory: /${path.join("/")}`
-    );
-
-  const finalFileName = getUniqueFileName(folder.files, name);
-
-  store.dispatch(
-    addFile({
-      file: {
-        name: finalFileName,
-        content: "",
-        icon: type === "folder" ? folderIcon : blankFileIcon,
-        type: type,
-        ...(type === "folder" ? { files: [] } : {}),
-      },
-      path,
-    })
-  );
-
-  return finalFileName;
+export function sh() {
+  return;
 }
 
 export function mkdir(path: string[], name: string) {
@@ -68,7 +59,6 @@ export function rm(files: string[][], { r = false, f = false } = {}) {
       );
   }
 
-  // Validate first, then delete to prevent conflict errors
   for (const path of files) store.dispatch(deleteFile(path));
 }
 
@@ -89,52 +79,170 @@ export function cp(
   destPath: string[],
   { r = false, f = false } = {}
 ) {
-  function copyFileOrDir(source: string[], dest: string[]) {
-    const file = findFileOrFolder(source);
+  const file = findFileOrFolder(sourcePath);
+  const destFile = findFileOrFolder(destPath);
 
-    if (!file)
-      throw new Error(`cat: /${source.join("/")}: No such file or directory`);
+  if (!file)
+    throw new Error(`cp: /${sourcePath.join("/")}: No such file or directory`);
 
-    if (file.type === "folder") {
-      if (!r) {
-        throw new Error(
-          `cp: Cannot copy directory '${source.join("/")}' without -r`
-        );
-      }
-
-      try {
-        mkdir(dest.slice(0, -1), dest.slice(-1)[0]);
-      } catch {}
-
-      for (const item of (file as Folder).files) {
-        copyFileOrDir([...source, item.name], [...dest, item.name]);
-      }
-    } else {
-      const destFile = findFileOrFolder(dest);
-
-      if (destFile) {
-        if (!f) {
-          throw new Error(`cp: File '${dest.join("/")}' already exists`);
-        }
-        rm([dest], { r: true, f: true });
-      }
-
-      createFileOrFolder(
-        dest,
-        file?.name,
-        file?.type as "file" | "folder",
-        "cp"
+  if (file.type === "folder") {
+    if (!r) {
+      throw new Error(
+        `cp: Cannot copy directory '${sourcePath.join("/")}' without -r`
       );
+    }
+
+    const destFile = findFileOrFolder(destPath);
+
+    if (destFile?.type === "file")
+      throw new Error("cp: Cannot override file with a directory.");
+  } else {
+    if (destFile?.type === "file") {
+      if (!f) {
+        throw new Error(`cp: File '${destPath.join("/")}' already exists`);
+      }
+      rm([destPath], { r: true, f: true });
     }
   }
 
-  try {
-    copyFileOrDir(sourcePath, destPath);
-  } catch (err: any) {
-    throw new Error(
-      `Error copying '${sourcePath.join("/")}' to '${destPath.join("/")}': ${
-        err.message
-      }`
+  createFileOrFolder(
+    destFile === null ? destPath.slice(0, -1) : destPath,
+    destFile === null ? destPath.slice(-1)[0] : file?.name,
+    file?.type as "file" | "folder",
+    "cp",
+    file.type === "file" ? (file as File)?.content : undefined,
+    file.type === "folder" ? (file as Folder).files : undefined
+  );
+}
+
+export function date(format: string) {
+  const now = new Date();
+
+  const placeholders: { [key: string]: string } = {
+    "%Y": `${now.getFullYear()}`,
+    "%m": String(now.getMonth() + 1).padStart(2, "0"),
+    "%d": String(now.getDate()).padStart(2, "0"),
+    "%H": String(now.getHours()).padStart(2, "0"),
+    "%M": String(now.getMinutes()).padStart(2, "0"),
+    "%S": String(now.getSeconds()).padStart(2, "0"),
+  };
+
+  if (!format) {
+    format = "%Y-%m-%d %H:%M:%S";
+  }
+
+  return format.replace(/%[YmdHMS]/g, (match) => placeholders[match]);
+}
+
+export function echo(...args: string[]) {
+  const options = { newline: true };
+  const strings: string[] = [];
+
+  for (const arg of args) {
+    if (arg === "-n") {
+      options.newline = false;
+    } else {
+      strings.push(arg);
+    }
+  }
+
+  const output = strings.join(" ").replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+
+  return options.newline ? output + "\n" : output;
+}
+
+export function kill(proccessId: string) {
+  store.dispatch(closeProgram(proccessId));
+}
+
+export function hostname() {
+  return system.hostName;
+}
+
+export function ls(path: string[], { l = false, a = false } = {}) {
+  const fileOrFolder = findFileOrFolder(path);
+
+  let visibleFiles: GeneralFile[] =
+    fileOrFolder?.type === "file" ? [fileOrFolder] : [];
+
+  if (fileOrFolder?.type === "folder") {
+    visibleFiles = (fileOrFolder as Folder).files.filter(
+      (file) => a || !file.name.startsWith(".")
     );
   }
+
+  if (visibleFiles.length) {
+    if (l) {
+      return visibleFiles
+        .map((file) => {
+          const type = file.type === "folder" ? "d" : "-";
+          const size = `${calculateFileSize(file)}B`;
+          return `${type} ${file.name} ${size}`;
+        })
+        .join("\n");
+    } else {
+      return visibleFiles.map((file) => file.name).join("\n");
+    }
+  }
+
+  return " ";
+}
+
+export function ps({ e = false, l = false } = {}) {
+  const processes = store.getState().processManager.programs;
+
+  const filteredProcesses = processes.filter(
+    (proc) => e || !proc.isSystemOwned
+  );
+
+  if (l) {
+    return filteredProcesses.map((proc) => {
+      return `PID: ${proc.id} CMD: ${proc.name} MEM: ${Math.round(
+        Math.random() * 100
+      )}MB CPU: ${Math.round(Math.random() * 3)}% STATE: RUNNING`;
+    });
+  }
+
+  return filteredProcesses.map((proc) => `${proc.id} ${proc.name}`);
+}
+
+export function pwd(path: string[]) {
+  return `/${path.join("/")}`;
+}
+
+export function mv(
+  source: string[],
+  destination: string[],
+  { f = false } = {}
+) {
+  try {
+    cp(source, destination, { r: true, f });
+    rm([source], { r: true, f });
+  } catch (error) {
+    throw new Error(
+      `mv: Error moving from ${source.join("/")} to ${destination.join(
+        "/"
+      )}: ${error}`
+    );
+  }
+}
+
+export function uname({
+  s = false,
+  n = false,
+  r = false,
+  m = false,
+  a = false,
+} = {}): string {
+  if (!a && !s && !n && !r && !m) {
+    return system.systemName;
+  }
+
+  const result: string[] = [];
+  if (s || a) result.push(system.systemName);
+  if (n || a) result.push(system.hostName);
+  if (r || a) result.push(system.kernelVersion);
+  if (m || a) result.push(system.architecture);
+
+  return result.join(" ");
 }

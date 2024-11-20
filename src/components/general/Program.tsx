@@ -21,6 +21,7 @@ export class Program<T extends React.FC<any>> {
   shouldShowInThePanel = true;
   minWidth = 200;
   minHeight = 200;
+  isSystemOwned = false;
 
   public static of(entry: ProgramEntry) {
     return new Program(
@@ -55,7 +56,8 @@ export class Program<T extends React.FC<any>> {
     width = 300,
     height = 300,
     minWidth = 200,
-    minHeight = 200
+    minHeight = 200,
+    isSystemOwned = false
   ) {
     this.id = id;
     this.name = name;
@@ -71,6 +73,7 @@ export class Program<T extends React.FC<any>> {
     this.shouldShowInThePanel = shouldShowInThePanel;
     this.minWidth = minWidth;
     this.minHeight = minHeight;
+    this.isSystemOwned = isSystemOwned;
   }
 
   renderIcon() {
