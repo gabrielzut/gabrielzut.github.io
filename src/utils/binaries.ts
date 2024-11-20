@@ -10,21 +10,21 @@ import { closeProgram } from "../redux/reducers/ProcessManagerReducer";
 import { system } from "./constants";
 
 export const defaultBinaries = [
-  cat,
-  cp,
-  date,
-  echo,
-  hostname,
-  ls,
-  kill,
-  mkdir,
-  mv,
-  ps,
-  pwd,
-  rm,
-  sh,
-  touch,
-  uname,
+  { name: "cat", executable: cat },
+  { name: "cp", executable: cp },
+  { name: "date", executable: date },
+  { name: "echo", executable: echo },
+  { name: "hostname", executable: hostname },
+  { name: "ls", executable: ls },
+  { name: "kill", executable: kill },
+  { name: "mkdir", executable: mkdir },
+  { name: "mv", executable: mv },
+  { name: "ps", executable: ps },
+  { name: "pwd", executable: pwd },
+  { name: "rm", executable: rm },
+  { name: "sh", executable: sh },
+  { name: "touch", executable: touch },
+  { name: "uname", executable: uname },
 ];
 
 export function sh() {

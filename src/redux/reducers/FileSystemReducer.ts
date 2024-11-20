@@ -20,8 +20,8 @@ const initialState: ProcessManagerState = {
           ...defaultBinaries.map((binary) => ({
             name: binary.name,
             type: "file",
-            content: binary.toString(),
-            command: binary,
+            content: binary.executable.toString(),
+            command: binary.executable,
             icon: executableIcon,
           })),
         ],
