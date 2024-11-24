@@ -166,3 +166,26 @@
     }
   }
 }
+
+.rename-file-modal {
+  padding: 10px;
+
+  .file-entry {
+    input {
+      border: none !important;
+      outline: 1px solid rgb(80, 80, 80);
+      margin-bottom: 5px;
+    }
+
+    .icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 5px;
+    }
+  }
+
+  .modal-options {
+    display: flex;
+    justify-content: space-between;
+  }
+}

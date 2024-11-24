@@ -21,6 +21,8 @@ import {
 } from "../../utils/filesystemUtils";
 import { cp, kill, mkdir, mv, rm, touch } from "../../utils/binaries";
 import { copy, cut, paste } from "../../redux/reducers/ClipboardReducer";
+import { Modal } from "../general/Modal";
+import { AboutContent } from "../general/AboutContent";
 
 interface FileExplorerProps {
   startingPath?: string[];
@@ -52,13 +54,28 @@ interface FileEntryProps {
   onClick: (event: React.MouseEvent) => void;
   selected: boolean;
   cut: boolean;
+  path: string[];
 }
 
-const FileEntry: FC<FileEntryProps> = ({ file, onClick, selected, cut }) => {
+const FileEntry: FC<FileEntryProps> = ({
+  file,
+  onClick,
+  selected,
+  cut,
+  path,
+}) => {
+  const handleDragStart = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.dataTransfer.setData("file", JSON.stringify({ file, path }));
+    },
+    [file, path]
+  );
+
   return (
     <div
       className={`file-entry ${selected ? "selected" : ""} ${cut ? "cut" : ""}`}
       onClick={onClick}
+      onDragStart={handleDragStart}
     >
       <div className="icon">
         {
@@ -76,20 +93,38 @@ const FileEntry: FC<FileEntryProps> = ({ file, onClick, selected, cut }) => {
 interface FileEntryFormProps {
   onSubmit: (value: string, isCancel: boolean) => void;
   type: "folder" | "file";
+  defaultName?: string;
+  ignoreBlurEvent?: boolean;
 }
 
-const FileEntryForm: FC<FileEntryFormProps> = ({ onSubmit, type }) => {
+const FileEntryForm: FC<FileEntryFormProps> = ({
+  onSubmit,
+  type,
+  defaultName,
+  ignoreBlurEvent = false,
+}) => {
   const [name, setName] = useState(
     type === "folder" ? "New folder" : "New file"
   );
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      inputRef.current?.focus();
-      inputRef.current?.setSelectionRange(0, inputRef.current.value.length);
-    }, 50);
-  }, []);
+    if (defaultName) {
+      setName(defaultName);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.setSelectionRange(0, inputRef.current.value.length);
+      }, 100);
+    }
+  }, [defaultName]);
+
+  useEffect(() => {
+    if (!ignoreBlurEvent)
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.setSelectionRange(0, inputRef.current.value.length);
+      }, 50);
+  }, [ignoreBlurEvent]);
 
   return (
     <div className="file-entry new">
@@ -109,7 +144,10 @@ const FileEntryForm: FC<FileEntryFormProps> = ({ onSubmit, type }) => {
           (e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value),
           []
         )}
-        onBlur={useCallback(() => onSubmit(name, false), [name, onSubmit])}
+        onBlur={useCallback(
+          () => !ignoreBlurEvent && onSubmit(name, false),
+          [ignoreBlurEvent, name, onSubmit]
+        )}
         onKeyDown={useCallback(
           (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === "Enter") onSubmit(name, false);
@@ -146,13 +184,20 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   const [forwardStack, setForwardStack] = useState<string[][]>([]);
   const root = useSelector((state: RootState) => state.fileSystem.root);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [renamingFileName, setRenamingFileName] = useState<string>();
+  const [renamingFileError, setRenamingFileError] = useState<string>();
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
     null
   );
+  const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const { copiedValue, setForDeletion } = useSelector(
     (state: RootState) => state.clipboard
   );
   const [creatingFileType, setCreatingFileType] = useState<"folder" | "file">();
+  const [mainDivSize, setMainDivSize] = useState<{
+    width: number;
+    height: number;
+  }>();
   const currentDirectory = useMemo(
     () => findFolder(root as Folder, path),
     [path, root]
@@ -164,13 +209,35 @@ export const FileExplorer: FC<FileExplorerProps> = ({
       ) ?? [],
     [currentDirectory?.files, showHiddenFiles]
   );
+  const renamingFile = useMemo(
+    () => currFiles.find((file) => file.name === renamingFileName),
+    [currFiles, renamingFileName]
+  );
   const fileListRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const mainDivRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
 
   useEffect(() => {
     setSelectedFiles([]);
   }, [path]);
+
+  useEffect(() => {
+    if (!mainDivRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        setMainDivSize({ width, height });
+      }
+    });
+
+    resizeObserver.observe(mainDivRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const handleClickOutsideFileList = useCallback((event: MouseEvent) => {
     const isClickOutsideFileList =
@@ -289,8 +356,58 @@ export const FileExplorer: FC<FileExplorerProps> = ({
     [creatingFileType, currentDirectory, path]
   );
 
+  const handleShowAboutModal = useCallback(
+    () => setAboutModalVisible(true),
+    []
+  );
+  const handleCloseAboutModal = useCallback(
+    () => setAboutModalVisible(false),
+    []
+  );
+
+  const handleCloseRenameModal = useCallback(
+    () => setRenamingFileName(undefined),
+    []
+  );
+
+  const handleRenameFile = useCallback(
+    (newName: string) => {
+      try {
+        if (!renamingFileName) throw new Error("Please, input a valid name!");
+        if (currFiles.find((file) => file.name === newName))
+          throw new Error("There is already a file with that name!");
+        mv([...path, renamingFileName], [...path, newName]);
+        handleCloseRenameModal();
+      } catch (e) {
+        setRenamingFileError(`${e}`);
+      }
+    },
+    [currFiles, handleCloseRenameModal, path, renamingFileName]
+  );
+
+  const handleCloseErrorModal = useCallback(
+    () => setRenamingFileError(undefined),
+    []
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const { file, path: oldPath } = JSON.parse(
+        e.dataTransfer.getData("file")
+      ) as { file?: GeneralFile; path?: string[] };
+
+      console.log(file, oldPath);
+
+      if (file && oldPath && path.join("/") !== oldPath.join("/")) {
+        mv([...oldPath, getUniqueFileName(currFiles, file.name)], path);
+      }
+    },
+    [currFiles, path]
+  );
+
   return (
-    <div className="file-explorer">
+    <div className="file-explorer" ref={mainDivRef}>
       <WindowOptions
         options={useMemo(
           () => [
@@ -312,6 +429,13 @@ export const FileExplorer: FC<FileExplorerProps> = ({
             {
               name: "Edit",
               dropdownOptions: [
+                {
+                  name: "Rename",
+                  isBlocked: selectedFiles?.length !== 1,
+                  onClick: () => {
+                    setRenamingFileName(selectedFiles[0]);
+                  },
+                },
                 {
                   name: "Copy",
                   onClick: () => {
@@ -402,11 +526,17 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                 },
               ],
             },
-            { name: "Help", dropdownOptions: [{ name: "About" }] },
+            {
+              name: "Help",
+              dropdownOptions: [
+                { name: "About", onClick: handleShowAboutModal },
+              ],
+            },
           ],
           [
             copiedValue,
             dispatch,
+            handleShowAboutModal,
             path,
             selectedFiles,
             setForDeletion,
@@ -464,7 +594,15 @@ export const FileExplorer: FC<FileExplorerProps> = ({
           />
         </button>
       </div>
-      <div className="content" ref={contentRef}>
+      <div
+        className="content"
+        ref={contentRef}
+        onDragOver={useCallback(
+          (e: React.DragEvent<HTMLDivElement>) => e.preventDefault(),
+          []
+        )}
+        onDrop={handleDrop}
+      >
         <div className="left-panel">
           <div className="title">Shortcuts</div>
           {userShortcuts.map((shortcut) => (
@@ -493,6 +631,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
               file={file}
               selected={selectedFiles.includes(file.name)}
               cut={cutFiles.includes([...path, file.name].join("/"))}
+              path={path}
             />
           ))}
           {creatingFileType && (
@@ -503,6 +642,46 @@ export const FileExplorer: FC<FileExplorerProps> = ({
           )}
         </div>
       </div>
+      <Modal
+        title="About File Explorer"
+        content={
+          <AboutContent
+            title="ZutiOS File explorer"
+            version="1.0.0"
+            description="This is a simple file explorer emulator for the web."
+          />
+        }
+        visible={aboutModalVisible}
+        onClose={handleCloseAboutModal}
+        parentSize={mainDivSize}
+      />
+      <Modal
+        title="Renaming file"
+        content={
+          <div className="rename-file-modal">
+            <FileEntryForm
+              onSubmit={handleRenameFile}
+              type={(renamingFile?.type as "file" | "folder") ?? "file"}
+              defaultName={renamingFileName}
+              ignoreBlurEvent={true}
+            />
+            <div className="modal-options">
+              <button>Cancel</button>
+              <button>Confirm</button>
+            </div>
+          </div>
+        }
+        visible={!!renamingFile}
+        onClose={handleCloseRenameModal}
+        parentSize={mainDivSize}
+      />
+      <Modal
+        title="Error renaming file"
+        content={<div className="modal-error">{renamingFileError}</div>}
+        visible={!!renamingFileError}
+        onClose={handleCloseErrorModal}
+        parentSize={mainDivSize}
+      />
     </div>
   );
 };
