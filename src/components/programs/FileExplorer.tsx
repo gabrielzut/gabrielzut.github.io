@@ -14,7 +14,7 @@ import musicIcon from "../../assets/img/music.png";
 import videosIcon from "../../assets/img/videos.png";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
-import { Folder, GeneralFile } from "../../model/file";
+import { File, Folder, GeneralFile } from "../../model/file";
 import {
   findFolder,
   getFileIcon,
@@ -389,11 +389,18 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 
   const handleSelectFiles = useCallback(
     (index: number, fileName: string, event: React.MouseEvent) => {
-      if (
-        event.detail === 2 &&
-        currFiles.find((file) => file.name === fileName)?.type === "folder"
-      ) {
-        updatePath([...path, fileName]);
+      if (event.detail === 2) {
+        const targetFile = currFiles.find((file) => file.name === fileName);
+
+        if (targetFile?.type === "folder") {
+          updatePath([...path, fileName]);
+        } else {
+          const command = (targetFile as File).command;
+
+          try {
+            if (command) command();
+          } catch {}
+        }
       }
 
       if (event.shiftKey && lastSelectedIndex !== null) {

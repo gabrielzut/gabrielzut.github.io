@@ -1,8 +1,5 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  addProgram,
-  closeProgram,
-} from "../../redux/reducers/ProcessManagerReducer";
+import { closeProgram } from "../../redux/reducers/ProcessManagerReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../redux";
 import { programCategories, ProgramCategory, ProgramEntry } from ".";
@@ -10,7 +7,7 @@ import shutDownIcon from "../../assets/img/shutdown.gif";
 import executableIcon from "../../assets/img/executable.png";
 import simpleArrowIcon from "../../assets/img/simple-arrow.png";
 import { shutDownSystem } from "../../redux/reducers/SystemReducer";
-import { Program } from "../general/Program";
+import { openProgram } from "../../utils/binaries";
 
 interface ProgramCategoryEntryProps {
   name: string;
@@ -51,7 +48,7 @@ export const MainMenu: FC<MainMenuProps> = () => {
 
   const handleOpenProgram = useCallback(
     (program: ProgramEntry) => {
-      dispatch(addProgram(Program.of(program)));
+      openProgram(program);
       if (id) dispatch(closeProgram(id));
     },
     [dispatch, id]

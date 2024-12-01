@@ -6,8 +6,14 @@ import {
   createFileOrFolder,
   findFileOrFolder,
 } from "./filesystemUtils";
-import { closeProgram } from "../redux/reducers/ProcessManagerReducer";
+import {
+  addProgram,
+  closeProgram,
+} from "../redux/reducers/ProcessManagerReducer";
 import { system } from "./constants";
+import { Program } from "../components/general/Program";
+import { fileExplorerEntry } from "../components/programs/FileExplorer";
+import { ProgramEntry } from "../components/programs";
 
 export const defaultBinaries = [
   { name: "cat", executable: cat },
@@ -25,7 +31,12 @@ export const defaultBinaries = [
   { name: "sh", executable: sh },
   { name: "touch", executable: touch },
   { name: "uname", executable: uname },
+  { name: "fileExplorer", executable: () => openProgram(fileExplorerEntry) },
 ];
+
+export function openProgram(entry: ProgramEntry) {
+  store.dispatch(addProgram(Program.of(entry)));
+}
 
 export function sh() {
   return;
