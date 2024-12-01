@@ -64,18 +64,42 @@ const FileEntry: FC<FileEntryProps> = ({
   cut,
   path,
 }) => {
+  const fileEntryRef = useRef<HTMLDivElement>(null);
+  const dragCopyRef = useRef<HTMLDivElement | null>(null);
+
   const handleDragStart = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.dataTransfer.setData("file", JSON.stringify({ file, path }));
+
+      if (fileEntryRef.current) {
+        const copy = fileEntryRef.current?.cloneNode(true);
+        (copy as HTMLDivElement).style.backgroundColor = "transparent";
+        (copy as HTMLDivElement).style.border = "none";
+        (copy as HTMLDivElement).style.outline = "none";
+        (copy as HTMLDivElement).style.alignItems = "center";
+        document.body.appendChild(copy);
+        dragCopyRef.current = copy as HTMLDivElement;
+        e.dataTransfer.setDragImage(copy as HTMLDivElement, 0, 0);
+      }
     },
     [file, path]
   );
+
+  const handleDragEnd = () => {
+    if (dragCopyRef.current) {
+      document.body.removeChild(dragCopyRef.current);
+      dragCopyRef.current = null;
+    }
+  };
 
   return (
     <div
       className={`file-entry ${selected ? "selected" : ""} ${cut ? "cut" : ""}`}
       onClick={onClick}
+      draggable
       onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      ref={fileEntryRef}
     >
       <div className="icon">
         {
