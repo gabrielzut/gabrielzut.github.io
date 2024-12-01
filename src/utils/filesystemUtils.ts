@@ -99,3 +99,15 @@ export function createFileOrFolder(
 
   return finalFileName;
 }
+
+export function isValidFileMove(sourcePath: string[], targetPath: string[]) {
+  if (targetPath.length >= sourcePath.length) {
+    for (let i = 0; i < sourcePath.length; i++) {
+      if (sourcePath[i] !== targetPath[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+  return true;
+}

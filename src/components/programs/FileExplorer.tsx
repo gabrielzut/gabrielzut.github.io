@@ -8,6 +8,7 @@ import homeIcon from "../../assets/img/home.png";
 import searchIcon from "../../assets/img/search.png";
 import documentsIcon from "../../assets/img/documents.png";
 import downloadsIcon from "../../assets/img/downloads.png";
+import trashIcon from "../../assets/img/trash-small.png";
 import imagesIcon from "../../assets/img/images.png";
 import musicIcon from "../../assets/img/music.png";
 import videosIcon from "../../assets/img/videos.png";
@@ -18,6 +19,7 @@ import {
   findFolder,
   getFileIcon,
   getUniqueFileName,
+  isValidFileMove,
 } from "../../utils/filesystemUtils";
 import { cp, kill, mkdir, mv, rm, touch } from "../../utils/binaries";
 import { copy, cut, paste } from "../../redux/reducers/ClipboardReducer";
@@ -64,12 +66,14 @@ const FileEntry: FC<FileEntryProps> = ({
   cut,
   path,
 }) => {
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileEntryRef = useRef<HTMLDivElement>(null);
   const dragCopyRef = useRef<HTMLDivElement | null>(null);
 
   const handleDragStart = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.dataTransfer.setData("file", JSON.stringify({ file, path }));
+      e.dataTransfer.setData(`filePath-${[...path, file.name].join("/")}`, "");
 
       if (fileEntryRef.current) {
         const copy = fileEntryRef.current?.cloneNode(true);
@@ -77,6 +81,9 @@ const FileEntry: FC<FileEntryProps> = ({
         (copy as HTMLDivElement).style.border = "none";
         (copy as HTMLDivElement).style.outline = "none";
         (copy as HTMLDivElement).style.alignItems = "center";
+        (copy as HTMLDivElement).style.display = "flex";
+        (copy as HTMLDivElement).style.flexDirection = "column";
+        (copy as HTMLDivElement).style.width = "100px";
         document.body.appendChild(copy);
         dragCopyRef.current = copy as HTMLDivElement;
         e.dataTransfer.setDragImage(copy as HTMLDivElement, 0, 0);
@@ -92,6 +99,72 @@ const FileEntry: FC<FileEntryProps> = ({
     }
   };
 
+  const handleDropFile = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDraggingOver(false);
+
+      if (file.type !== "folder") return;
+
+      const { file: draggedFile, path: draggedFilePath } = JSON.parse(
+        e.dataTransfer.getData("file")
+      ) as { file?: GeneralFile; path?: string[] };
+
+      if (
+        draggedFile &&
+        draggedFile.name &&
+        draggedFilePath &&
+        isValidFileMove(
+          [...draggedFilePath, draggedFile.name],
+          [...path, file.name]
+        )
+      ) {
+        mv(
+          [
+            ...draggedFilePath,
+            getUniqueFileName((file as Folder).files, draggedFile.name ?? ""),
+          ],
+          [...path, file.name]
+        );
+      }
+
+      e.dataTransfer.clearData();
+    },
+    [file, path]
+  );
+
+  const handleDragFileOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      if (file.type !== "folder") return;
+
+      const draggedFilePath = e.dataTransfer.types.find((type) =>
+        type.startsWith("filepath-")
+      );
+
+      if (draggedFilePath) {
+        if (
+          [...path, file.name].join("/").toLocaleLowerCase() ===
+          draggedFilePath.replace("filepath-", "").toLocaleLowerCase()
+        )
+          return;
+      }
+
+      setIsDraggingOver(true);
+    },
+    [file, path]
+  );
+
+  const handleDragFileLeave = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      if (file.type !== "folder") return;
+      if (!e.currentTarget.contains(e.relatedTarget as HTMLDivElement))
+        setIsDraggingOver(false);
+    },
+    [file.type]
+  );
+
   return (
     <div
       className={`file-entry ${selected ? "selected" : ""} ${cut ? "cut" : ""}`}
@@ -99,6 +172,18 @@ const FileEntry: FC<FileEntryProps> = ({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDrop={handleDropFile}
+      onDragOver={handleDragFileOver}
+      style={useMemo(
+        () =>
+          isDraggingOver
+            ? {
+                outline: "1px dotted black",
+              }
+            : undefined,
+        [isDraggingOver]
+      )}
+      onDragLeave={handleDragFileLeave}
       ref={fileEntryRef}
     >
       <div className="icon">
@@ -191,6 +276,11 @@ const userShortcuts = [
   { name: "Images", icon: imagesIcon },
   { name: "Music", icon: musicIcon },
   { name: "Videos", icon: videosIcon },
+  {
+    name: "Trash bin",
+    icon: trashIcon,
+    path: ["home", "user", ".local", "share", "Trash"],
+  },
 ];
 
 export const FileExplorer: FC<FileExplorerProps> = ({
@@ -421,11 +511,16 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         e.dataTransfer.getData("file")
       ) as { file?: GeneralFile; path?: string[] };
 
-      console.log(file, oldPath);
-
-      if (file && oldPath && path.join("/") !== oldPath.join("/")) {
+      if (
+        file &&
+        oldPath &&
+        path.join("/") !== oldPath.join("/") &&
+        isValidFileMove([...oldPath, file.name], path)
+      ) {
         mv([...oldPath, getUniqueFileName(currFiles, file.name)], path);
       }
+
+      e.dataTransfer.clearData();
     },
     [currFiles, path]
   );
@@ -633,7 +728,11 @@ export const FileExplorer: FC<FileExplorerProps> = ({
             <ShortcutEntry
               shortcut={shortcut}
               key={shortcut.name}
-              onClick={() => updatePath([...HOME_PATH, shortcut.name])}
+              onClick={() =>
+                updatePath(
+                  shortcut.path ? shortcut.path : [...HOME_PATH, shortcut.name]
+                )
+              }
             />
           ))}
           <div className="divider" />
