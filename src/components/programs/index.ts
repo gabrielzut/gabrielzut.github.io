@@ -1,8 +1,8 @@
 import { fileExplorerEntry } from "./FileExplorer";
 import systemIcon from "../../assets/img/system.png";
 
-export interface ProgramEntry {
-  component: React.FC<any>;
+export interface ProgramEntry<T> {
+  component: React.FC<T>;
   name: string;
   shouldShowFrame: boolean;
   defaultWidth?: number;
@@ -13,18 +13,19 @@ export interface ProgramEntry {
   defaultY?: number;
   minWidth?: number;
   minHeight?: number;
+  props?: T;
 }
 
 export interface ProgramCategory {
   name: string;
-  programs: ProgramEntry[];
+  programs: { entry: ProgramEntry<any>; path: string[] }[];
   icon: string;
 }
 
 export const programCategories: ProgramCategory[] = [
   {
     name: "System",
-    programs: [fileExplorerEntry],
+    programs: [{ entry: fileExplorerEntry, path: ["bin", "fileExplorer"] }],
     icon: systemIcon,
   },
 ];

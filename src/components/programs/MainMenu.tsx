@@ -7,7 +7,7 @@ import shutDownIcon from "../../assets/img/shutdown.gif";
 import executableIcon from "../../assets/img/executable.png";
 import simpleArrowIcon from "../../assets/img/simple-arrow.png";
 import { shutDownSystem } from "../../redux/reducers/SystemReducer";
-import { openProgram } from "../../utils/binaries";
+import { executeBinary } from "../../utils/binaries";
 
 interface ProgramCategoryEntryProps {
   name: string;
@@ -47,8 +47,8 @@ export const MainMenu: FC<MainMenuProps> = () => {
   }, []);
 
   const handleOpenProgram = useCallback(
-    (program: ProgramEntry) => {
-      openProgram(program);
+    (path: string[]) => {
+      executeBinary(path);
       if (id) dispatch(closeProgram(id));
     },
     [dispatch, id]
@@ -101,10 +101,10 @@ export const MainMenu: FC<MainMenuProps> = () => {
             </div>
             {expandedCategory.programs.map((program) => (
               <ProgramCategoryEntry
-                onClick={() => handleOpenProgram(program)}
-                name={program.name}
-                key={program.name + "-program"}
-                icon={program.icon ?? executableIcon}
+                onClick={() => handleOpenProgram(program.path)}
+                name={program.entry.name}
+                key={program.entry.name + "-program"}
+                icon={program.entry.icon ?? executableIcon}
               />
             ))}
           </>
@@ -132,7 +132,7 @@ export const MainMenu: FC<MainMenuProps> = () => {
   );
 };
 
-export const mainMenuProgramEntry: ProgramEntry = {
+export const mainMenuProgramEntry: ProgramEntry<MainMenuProps> = {
   component: MainMenu,
   name: "mainMenu",
   defaultWidth: 300,

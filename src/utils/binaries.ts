@@ -14,6 +14,22 @@ import { system } from "./constants";
 import { Program } from "../components/general/Program";
 import { fileExplorerEntry } from "../components/programs/FileExplorer";
 import { ProgramEntry } from "../components/programs";
+import { errorProgramEntry } from "../components/programs/MessageWindow";
+
+export function errorHandler(func: Function) {
+  try {
+    func();
+  } catch (e: any) {
+    store.dispatch(
+      addProgram(
+        Program.of({
+          ...errorProgramEntry,
+          props: { text: e?.message ?? e ?? "Unknown error", type: "error" },
+        })
+      )
+    );
+  }
+}
 
 export const defaultBinaries = [
   { name: "cat", executable: cat },
@@ -34,7 +50,21 @@ export const defaultBinaries = [
   { name: "fileExplorer", executable: () => openProgram(fileExplorerEntry) },
 ];
 
-export function openProgram(entry: ProgramEntry) {
+export function executeBinary(path: string[]) {
+  errorHandler(() => {
+    const file = findFileOrFolder(path);
+
+    if (file && file.type === "file" && file.command) {
+      file.command();
+    } else {
+      throw new Error(
+        `Cannot execute /${path.join("/")} file not found or is not executable.`
+      );
+    }
+  });
+}
+
+export function openProgram(entry: ProgramEntry<any>) {
   store.dispatch(addProgram(Program.of(entry)));
 }
 

@@ -23,7 +23,7 @@ export class Program<T extends React.FC<any>> {
   minHeight = 200;
   isSystemOwned = false;
 
-  public static of(entry: ProgramEntry) {
+  public static of<T>(entry: ProgramEntry<T>) {
     return new Program(
       GenerateUUID(),
       entry.name,
@@ -38,7 +38,9 @@ export class Program<T extends React.FC<any>> {
       entry.defaultWidth,
       entry.defaultHeight,
       entry.minWidth,
-      entry.minHeight
+      entry.minHeight,
+      false,
+      entry.props
     );
   }
 
@@ -57,7 +59,8 @@ export class Program<T extends React.FC<any>> {
     height = 300,
     minWidth = 200,
     minHeight = 200,
-    isSystemOwned = false
+    isSystemOwned = false,
+    props?: React.ComponentProps<T>
   ) {
     this.id = id;
     this.name = name;
@@ -74,6 +77,7 @@ export class Program<T extends React.FC<any>> {
     this.minWidth = minWidth;
     this.minHeight = minHeight;
     this.isSystemOwned = isSystemOwned;
+    this.props = props;
   }
 
   renderIcon() {

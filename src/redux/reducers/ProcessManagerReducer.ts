@@ -4,7 +4,7 @@ import { GenerateUUID } from "../../utils/generators";
 import { TopBar } from "../../components/programs/TopBar";
 import React from "react";
 import { VolumeTrayIcon } from "../../components/programs/VolumeTrayIcon";
-import { warnProgramEntry } from "../../components/programs/Warn";
+import { warnProgramEntry } from "../../components/programs/MessageWindow";
 import { fileExplorerEntry } from "../../components/programs/FileExplorer";
 
 export interface ProcessManagerState {
@@ -49,7 +49,10 @@ const initialState: ProcessManagerState = {
       true
     ),
     Program.of(fileExplorerEntry),
-    Program.of(warnProgramEntry),
+    Program.of({
+      ...warnProgramEntry,
+      props: { text: "Under construction!", type: "warn" },
+    }),
   ],
   currentZIndex: 1,
 };

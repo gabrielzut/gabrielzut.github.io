@@ -816,7 +816,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   );
 };
 
-export const fileExplorerEntry: ProgramEntry = {
+export const fileExplorerEntry: ProgramEntry<FileExplorerProps> = {
   component: FileExplorer,
   name: "File Explorer",
   shouldShowFrame: true,
