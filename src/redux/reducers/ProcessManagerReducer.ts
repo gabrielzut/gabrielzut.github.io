@@ -5,7 +5,7 @@ import { TopBar } from "../../components/programs/TopBar";
 import React from "react";
 import { VolumeTrayIcon } from "../../components/programs/VolumeTrayIcon";
 import { warnProgramEntry } from "../../components/programs/MessageWindow";
-import { fileExplorerEntry } from "../../components/programs/FileExplorer";
+import { terminalEntry } from "../../components/programs/Terminal";
 
 export interface ProcessManagerState {
   programs: Program<any>[];
@@ -48,7 +48,7 @@ const initialState: ProcessManagerState = {
       undefined,
       true
     ),
-    Program.of(fileExplorerEntry),
+    Program.of(terminalEntry),
     Program.of({
       ...warnProgramEntry,
       props: { text: "Under construction!", type: "warn" },

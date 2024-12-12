@@ -119,13 +119,16 @@ const FileEntry: FC<FileEntryProps> = ({
           [...path, file.name]
         )
       ) {
-        mv(
-          [
-            ...draggedFilePath,
-            getUniqueFileName((file as Folder).files, draggedFile.name ?? ""),
-          ],
-          [...path, file.name]
-        );
+        mv({
+          path,
+          params: {
+            source: [
+              ...draggedFilePath,
+              getUniqueFileName((file as Folder).files, draggedFile.name ?? ""),
+            ],
+            destination: [...path, file.name],
+          },
+        });
       }
 
       e.dataTransfer.clearData();
@@ -468,8 +471,21 @@ export const FileExplorer: FC<FileExplorerProps> = ({
     (value: string, isCancel: boolean) => {
       if (!isCancel && value.length && creatingFileType && currentDirectory) {
         if (creatingFileType === "file")
-          touch(path, getUniqueFileName(currentDirectory.files, value));
-        else mkdir(path, getUniqueFileName(currentDirectory.files, value));
+          touch({
+            path,
+            params: {
+              path,
+              name: getUniqueFileName(currentDirectory.files, value),
+            },
+          });
+        else
+          mkdir({
+            path,
+            params: {
+              path,
+              name: getUniqueFileName(currentDirectory.files, value),
+            },
+          });
       }
 
       setCreatingFileType(undefined);
@@ -497,7 +513,13 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         if (!renamingFileName) throw new Error("Please, input a valid name!");
         if (currFiles.find((file) => file.name === newName))
           throw new Error("There is already a file with that name!");
-        mv([...path, renamingFileName], [...path, newName]);
+        mv({
+          path,
+          params: {
+            source: [...path, renamingFileName],
+            destination: [...path, newName],
+          },
+        });
         handleCloseRenameModal();
       } catch (e) {
         setRenamingFileError(`${e}`);
@@ -524,7 +546,13 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         path.join("/") !== oldPath.join("/") &&
         isValidFileMove([...oldPath, file.name], path)
       ) {
-        mv([...oldPath, getUniqueFileName(currFiles, file.name)], path);
+        mv({
+          path,
+          params: {
+            source: [...oldPath, getUniqueFileName(currFiles, file.name)],
+            destination: path,
+          },
+        });
       }
 
       e.dataTransfer.clearData();
@@ -549,7 +577,11 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                   onClick: () => setCreatingFileType("file"),
                 },
                 { name: "Open terminal" },
-                { name: "Exit", onClick: () => kill(uid) },
+                {
+                  name: "Exit",
+                  onClick: () =>
+                    kill({ path: [], params: { proccessId: uid } }),
+                },
               ],
             },
             {
@@ -591,11 +623,26 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                       for (const file of setForDeletion
                         ? differentPathFiles
                         : files) {
-                        cp(file, path, { r: true, f: true });
+                        cp({
+                          path,
+                          params: {
+                            sourcePath: file,
+                            destPath: path,
+                            r: true,
+                            f: true,
+                          },
+                        });
                       }
 
                       if (setForDeletion && differentPathFiles.length)
-                        rm(differentPathFiles, { r: true, f: true });
+                        rm({
+                          path,
+                          params: {
+                            files: differentPathFiles,
+                            r: true,
+                            f: true,
+                          },
+                        });
                       dispatch(paste());
                       setCutFiles([]);
                     }
@@ -626,11 +673,20 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                       )
                         return;
 
-                      mv(
-                        [...path, file],
-                        ["home", "user", ".local", "share", "Trash"],
-                        { f: true }
-                      );
+                      mv({
+                        path,
+                        params: {
+                          source: [...path, file],
+                          destination: [
+                            "home",
+                            "user",
+                            ".local",
+                            "share",
+                            "Trash",
+                          ],
+                          f: true,
+                        },
+                      });
                     }
                   },
                 },

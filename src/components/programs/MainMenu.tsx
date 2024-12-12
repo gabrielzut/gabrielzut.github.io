@@ -48,7 +48,7 @@ export const MainMenu: FC<MainMenuProps> = () => {
 
   const handleOpenProgram = useCallback(
     (path: string[]) => {
-      executeBinary(path);
+      executeBinary(path.slice(0, -1), path.slice(-1)[0]);
       if (id) dispatch(closeProgram(id));
     },
     [dispatch, id]

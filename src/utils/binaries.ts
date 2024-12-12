@@ -15,10 +15,13 @@ import { Program } from "../components/general/Program";
 import { fileExplorerEntry } from "../components/programs/FileExplorer";
 import { ProgramEntry } from "../components/programs";
 import { errorProgramEntry } from "../components/programs/MessageWindow";
+import { terminalEntry } from "../components/programs/Terminal";
 
-export function errorHandler(func: Function) {
+export function errorHandler(func: Function, disableErrorHandling: boolean) {
+  if (disableErrorHandling) return func();
+
   try {
-    func();
+    return func();
   } catch (e: any) {
     store.dispatch(
       addProgram(
@@ -48,20 +51,33 @@ export const defaultBinaries = [
   { name: "touch", executable: touch },
   { name: "uname", executable: uname },
   { name: "fileExplorer", executable: () => openProgram(fileExplorerEntry) },
+  { name: "terminal", executable: () => openProgram(terminalEntry) },
 ];
 
-export function executeBinary(path: string[]) {
-  errorHandler(() => {
-    const file = findFileOrFolder(path);
+export function executeBinary(
+  path: string[],
+  fileName: string,
+  currPath?: string[],
+  disableErrorHandling = false,
+  params: any = {}
+) {
+  return errorHandler(() => {
+    let file = findFileOrFolder([...path, fileName]);
+
+    if (!file && currPath) {
+      file = findFileOrFolder([...currPath, fileName]);
+    }
 
     if (file && file.type === "file" && file.command) {
-      file.command();
+      return file.command({ path: currPath, params });
     } else {
       throw new Error(
-        `Cannot execute /${path.join("/")} file not found or is not executable.`
+        `Cannot execute /${path.join(
+          "/"
+        )}/${fileName}, file not found or is not executable.`
       );
     }
-  });
+  }, disableErrorHandling);
 }
 
 export function openProgram(entry: ProgramEntry<any>) {
@@ -72,27 +88,50 @@ export function sh() {
   return;
 }
 
-export function mkdir(path: string[], name: string) {
-  return createFileOrFolder(path, name, "folder", "mkdir");
+interface BinaryParams<T> {
+  params: T;
+  path: string[];
 }
 
-export function touch(path: string[], name: string) {
-  return createFileOrFolder(path, name, "file", "touch");
+export function mkdir({
+  params,
+  path,
+}: BinaryParams<{ path?: string[]; name?: string }>) {
+  if (!params.name) throw new Error(`touch: No file name was informed.`);
+
+  return createFileOrFolder(
+    params.path ?? path,
+    params.name,
+    "folder",
+    "mkdir"
+  );
 }
 
-export function rm(files: string[][], { r = false, f = false } = {}) {
-  if (!files.length) throw new Error(`rm: missing operand`);
+export function touch({
+  params,
+  path,
+}: BinaryParams<{ path?: string[]; name?: string }>) {
+  if (!params.name) throw new Error("touch: No file name was informed.");
 
-  for (const path of files) {
+  return createFileOrFolder(params.path ?? path, params.name, "file", "touch");
+}
+
+export function rm({
+  params,
+  path,
+}: BinaryParams<{ files?: string[][]; r?: boolean; f?: boolean }>) {
+  if (!params.files?.length) throw new Error(`rm: missing operand`);
+
+  for (const path of params.files) {
     const file = findFileOrFolder(path);
 
     if (!file) {
-      if (!f)
+      if (!params.f)
         throw new Error(`rm: No such file or directory: /${path.join("/")}`);
       return;
     }
 
-    if (file?.type === "folder" && !r)
+    if (file?.type === "folder" && !params.r)
       throw new Error(
         `rm: Cannot remove '${
           path[path.length - 1]
@@ -100,11 +139,11 @@ export function rm(files: string[][], { r = false, f = false } = {}) {
       );
   }
 
-  for (const path of files) store.dispatch(deleteFile(path));
+  for (const path of params.files) store.dispatch(deleteFile(path));
 }
 
-export function cat(path: string[]) {
-  const file = findFileOrFolder(path);
+export function cat({ params, path }: BinaryParams<{ path?: string[] }>) {
+  const file = findFileOrFolder(params.path ?? path);
 
   if (!file)
     throw new Error(`cat: /${path.join("/")}: No such file or directory`);
@@ -115,40 +154,51 @@ export function cat(path: string[]) {
   return (file as File).content;
 }
 
-export function cp(
-  sourcePath: string[],
-  destPath: string[],
-  { r = false, f = false } = {}
-) {
-  const file = findFileOrFolder(sourcePath);
-  const destFile = findFileOrFolder(destPath);
+export function cp({
+  params,
+  path,
+}: BinaryParams<{
+  sourcePath?: string[];
+  destPath?: string[];
+  r?: boolean;
+  f?: boolean;
+}>) {
+  if (!params.sourcePath || !params.destPath)
+    throw new Error("cp: missing operand");
+
+  const file = findFileOrFolder(params.sourcePath);
+  const destFile = findFileOrFolder(params.destPath);
 
   if (!file)
-    throw new Error(`cp: /${sourcePath.join("/")}: No such file or directory`);
+    throw new Error(
+      `cp: /${params.sourcePath.join("/")}: No such file or directory`
+    );
 
   if (file.type === "folder") {
-    if (!r) {
+    if (!params.r) {
       throw new Error(
-        `cp: Cannot copy directory '${sourcePath.join("/")}' without -r`
+        `cp: Cannot copy directory '${params.sourcePath.join("/")}' without -r`
       );
     }
 
-    const destFile = findFileOrFolder(destPath);
+    const destFile = findFileOrFolder(params.destPath);
 
     if (destFile?.type === "file")
       throw new Error("cp: Cannot override file with a directory.");
   } else {
     if (destFile?.type === "file") {
-      if (!f) {
-        throw new Error(`cp: File '${destPath.join("/")}' already exists`);
+      if (!params.f) {
+        throw new Error(
+          `cp: File '${params.destPath.join("/")}' already exists`
+        );
       }
-      rm([destPath], { r: true, f: true });
+      rm({ path, params: { files: [params.destPath], r: true, f: true } });
     }
   }
 
   createFileOrFolder(
-    destFile === null ? destPath.slice(0, -1) : destPath,
-    destFile === null ? destPath.slice(-1)[0] : file?.name,
+    destFile === null ? params.destPath.slice(0, -1) : params.destPath,
+    destFile === null ? params.destPath.slice(-1)[0] : file?.name,
     file?.type as "file" | "folder",
     "cp",
     file.type === "file" ? (file as File)?.content : undefined,
@@ -156,7 +206,7 @@ export function cp(
   );
 }
 
-export function date(format: string) {
+export function date({ params }: BinaryParams<{ format?: string }>) {
   const now = new Date();
 
   const placeholders: { [key: string]: string } = {
@@ -168,18 +218,18 @@ export function date(format: string) {
     "%S": String(now.getSeconds()).padStart(2, "0"),
   };
 
-  if (!format) {
-    format = "%Y-%m-%d %H:%M:%S";
+  if (!params.format) {
+    params.format = "%Y-%m-%d %H:%M:%S";
   }
 
-  return format.replace(/%[YmdHMS]/g, (match) => placeholders[match]);
+  return params.format.replace(/%[YmdHMS]/g, (match) => placeholders[match]);
 }
 
-export function echo(...args: string[]) {
+export function echo({ params }: BinaryParams<{ args?: string[] }>) {
   const options = { newline: true };
   const strings: string[] = [];
 
-  for (const arg of args) {
+  for (const arg of params.args ?? []) {
     if (arg === "-n") {
       options.newline = false;
     } else {
@@ -192,28 +242,33 @@ export function echo(...args: string[]) {
   return options.newline ? output + "\n" : output;
 }
 
-export function kill(proccessId: string) {
-  store.dispatch(closeProgram(proccessId));
+export function kill({ params }: BinaryParams<{ proccessId?: string }>) {
+  if (!params.proccessId) throw new Error("kill: missing operand");
+
+  store.dispatch(closeProgram(params.proccessId));
 }
 
 export function hostname() {
   return system.hostName;
 }
 
-export function ls(path: string[], { l = false, a = false } = {}) {
-  const fileOrFolder = findFileOrFolder(path);
+export function ls({
+  params,
+  path,
+}: BinaryParams<{ path?: string[]; l?: boolean; a?: boolean }>) {
+  const fileOrFolder = findFileOrFolder(params.path ?? path);
 
   let visibleFiles: GeneralFile[] =
     fileOrFolder?.type === "file" ? [fileOrFolder] : [];
 
   if (fileOrFolder?.type === "folder") {
     visibleFiles = (fileOrFolder as Folder).files.filter(
-      (file) => a || !file.name.startsWith(".")
+      (file) => params.a || !file.name.startsWith(".")
     );
   }
 
   if (visibleFiles.length) {
-    if (l) {
+    if (params.l) {
       return visibleFiles
         .map((file) => {
           const type = file.type === "folder" ? "d" : "-";
@@ -229,14 +284,14 @@ export function ls(path: string[], { l = false, a = false } = {}) {
   return " ";
 }
 
-export function ps({ e = false, l = false } = {}) {
+export function ps({ params }: BinaryParams<{ e?: boolean; l?: boolean }>) {
   const processes = store.getState().processManager.programs;
 
   const filteredProcesses = processes.filter(
-    (proc) => e || !proc.isSystemOwned
+    (proc) => params.e || !proc.isSystemOwned
   );
 
-  if (l) {
+  if (params.l) {
     return filteredProcesses.map((proc) => {
       return `PID: ${proc.id} CMD: ${proc.name} MEM: ${Math.round(
         Math.random() * 100
@@ -247,43 +302,59 @@ export function ps({ e = false, l = false } = {}) {
   return filteredProcesses.map((proc) => `${proc.id} ${proc.name}`);
 }
 
-export function pwd(path: string[]) {
+export function pwd({ path }: BinaryParams<{}>) {
   return `/${path.join("/")}`;
 }
 
-export function mv(
-  source: string[],
-  destination: string[],
-  { f = false } = {}
-) {
+export function mv({
+  params,
+  path,
+}: BinaryParams<{
+  source?: string[];
+  destination?: string[];
+  f?: boolean;
+}>) {
+  if (!params.source || !params.destination)
+    throw new Error("mv: Missing parameters");
+
   try {
-    cp(source, destination, { r: true, f });
-    rm([source], { r: true, f });
+    cp({
+      path,
+      params: {
+        sourcePath: params.source,
+        destPath: params.destination,
+        r: true,
+        f: params.f,
+      },
+    });
+    rm({ path, params: { files: [params.source], r: true, f: params.f } });
   } catch (error) {
     throw new Error(
-      `mv: Error moving from ${source.join("/")} to ${destination.join(
+      `mv: Error moving from ${params.source.join(
         "/"
-      )}: ${error}`
+      )} to ${params.destination.join("/")}: ${error}`
     );
   }
 }
 
 export function uname({
-  s = false,
-  n = false,
-  r = false,
-  m = false,
-  a = false,
-} = {}): string {
-  if (!a && !s && !n && !r && !m) {
+  params,
+}: BinaryParams<{
+  s?: boolean;
+  n?: boolean;
+  r?: boolean;
+  m?: boolean;
+  a?: boolean;
+}>): string {
+  if (!params.a && !params.s && !params.n && !params.r && !params.m) {
     return system.systemName;
   }
 
   const result: string[] = [];
-  if (s || a) result.push(system.systemName);
-  if (n || a) result.push(system.hostName);
-  if (r || a) result.push(system.kernelVersion);
-  if (m || a) result.push(system.architecture);
+  if (params.s || params.a) result.push(system.systemName);
+  if (params.n || params.a) result.push(system.hostName);
+  if (params.r || params.a) result.push(system.kernelVersion);
+  if (params.m || params.a) result.push(system.architecture);
 
   return result.join(" ");
 }

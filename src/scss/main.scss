@@ -10,6 +10,7 @@
 @use "./components/warn";
 @use "./programs/fileExplorer";
 @use "./components/about";
+@use "./programs/terminal.scss";
 
 body {
   margin: 0;

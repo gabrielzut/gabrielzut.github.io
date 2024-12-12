@@ -1,5 +1,6 @@
 import { fileExplorerEntry } from "./FileExplorer";
 import systemIcon from "../../assets/img/system.png";
+import { terminalEntry } from "./Terminal";
 
 export interface ProgramEntry<T> {
   component: React.FC<T>;
@@ -25,7 +26,10 @@ export interface ProgramCategory {
 export const programCategories: ProgramCategory[] = [
   {
     name: "System",
-    programs: [{ entry: fileExplorerEntry, path: ["bin", "fileExplorer"] }],
+    programs: [
+      { entry: fileExplorerEntry, path: ["bin", "fileExplorer"] },
+      { entry: terminalEntry, path: ["bin", "terminal"] },
+    ],
     icon: systemIcon,
   },
 ];

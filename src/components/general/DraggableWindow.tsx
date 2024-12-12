@@ -283,6 +283,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
           return React.cloneElement<any>(child, {
             ...childProps,
             uid: windowId,
+            size,
           });
         }
         return child;
