@@ -1,4 +1,4 @@
-import React, { EventHandler, useEffect } from "react";
+import React, { EventHandler, useEffect, useMemo } from "react";
 import { FC, useCallback, useState } from "react";
 
 interface DropDownOption {
@@ -9,11 +9,12 @@ interface DropDownOption {
 
 interface DropDownProps {
   dropdownOptions: DropDownOption[];
+  closeDropdown?: () => void;
 }
 
-const DropDown: FC<DropDownProps> = ({ dropdownOptions }) => {
+const DropDown: FC<DropDownProps> = ({ dropdownOptions, closeDropdown }) => {
   return (
-    <div className="dropdown">
+    <div className="dropdown" onClick={closeDropdown}>
       {dropdownOptions.map((option) => (
         <button
           className={`dropdown-option ${option.isBlocked ? "blocked" : ""}`}
@@ -34,6 +35,7 @@ interface WindowOptionProps {
   isBlocked?: boolean;
   onMouseEnter: () => void;
   isOpen: boolean;
+  closeDropdown?: () => void;
 }
 
 export const WindowOption: FC<WindowOptionProps> = ({
@@ -43,7 +45,13 @@ export const WindowOption: FC<WindowOptionProps> = ({
   isBlocked = false,
   onMouseEnter,
   isOpen,
+  closeDropdown,
 }) => {
+  const shouldRenderDropdown = useMemo(
+    () => dropdownOptions && dropdownOptions.length && isOpen,
+    [dropdownOptions, isOpen]
+  );
+
   return (
     <div
       tabIndex={0}
@@ -56,8 +64,11 @@ export const WindowOption: FC<WindowOptionProps> = ({
       >
         {name}
       </button>
-      {dropdownOptions && dropdownOptions.length && isOpen && (
-        <DropDown dropdownOptions={dropdownOptions} />
+      {shouldRenderDropdown && (
+        <DropDown
+          closeDropdown={closeDropdown}
+          dropdownOptions={dropdownOptions ?? []}
+        />
       )}
     </div>
   );
@@ -88,11 +99,13 @@ export const WindowOptions: FC<WindowOptionsProps> = ({ options }) => {
     [openDropdown]
   );
 
+  const closeDropdown = useCallback(() => setOpenDropdown(null), []);
+
   useEffect(() => {
     const handleClickOutside = (e: React.MouseEvent) => {
-      setOpenDropdown(null);
-      if ((e.target as Element)?.className?.startsWith("dropdown-option")) {
-        (e.target as HTMLButtonElement).click();
+      const className = (e.target as Element)?.className;
+      if (!className.startsWith("dropdown-option")) {
+        setOpenDropdown(null);
       }
     };
     document.addEventListener(
@@ -112,9 +125,10 @@ export const WindowOptions: FC<WindowOptionsProps> = ({ options }) => {
         <WindowOption
           {...option}
           key={option.name}
-          onClick={() => option.onClick || handleOptionClick(option.name)}
+          onClick={() => option.onClick ?? handleOptionClick(option.name)}
           onMouseEnter={() => handleMouseEnter(option.name)}
           isOpen={openDropdown === option.name}
+          closeDropdown={closeDropdown}
         />
       ))}
     </div>

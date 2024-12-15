@@ -9,7 +9,7 @@ export function getFileIcon(type: string) {
 }
 
 export function findFileOrFolder(path: string[]): GeneralFile | null {
-  if (path.length === 0) return null;
+  if (path.length === 0) return store.getState().fileSystem.root;
 
   const fileName = path[path.length - 1];
   const containingFolderPath = path.slice(0, -1);
@@ -110,4 +110,9 @@ export function isValidFileMove(sourcePath: string[], targetPath: string[]) {
     return false;
   }
   return true;
+}
+
+export function isValidPath(path: string): boolean {
+  const pathRegex = /^\/([a-zA-Z0-9._-]+\/?)*$/;
+  return pathRegex.test(path);
 }

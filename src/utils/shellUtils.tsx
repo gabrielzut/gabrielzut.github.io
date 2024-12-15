@@ -1,3 +1,6 @@
+import { Folder } from "../model/file";
+import { store } from "../redux";
+import { findFolder } from "./filesystemUtils";
 import { GenerateUUID } from "./generators";
 
 export function printShellInfo(isSu: boolean, path: string[]) {
@@ -18,4 +21,109 @@ export function printShellInfo(isSu: boolean, path: string[]) {
       {isSu ? "#" : "$"}
     </span>
   );
+}
+
+export function getPathFromCommand(command: string, path: string[]) {
+  const parts = command.split("/").filter((part) => part !== "");
+
+  const newPath = command.startsWith("/") ? [] : [...path];
+
+  for (const part of parts) {
+    if (part === "..") {
+      if (newPath.length > 0) {
+        newPath.pop();
+      }
+    } else if (part === ".") {
+      continue;
+    } else {
+      newPath.push(part);
+    }
+  }
+
+  return newPath;
+}
+
+export function autoComplete(
+  command: string,
+  path: string[],
+  cursorPos: number
+) {
+  const parts = command.split(" ");
+  const currentCommand = parts[0];
+  const currentArg = parts.slice(1).join(" ");
+
+  const root = store.getState().fileSystem.root as Folder;
+  const binaries = findFolder(root, ["bin"])?.files.map(
+    (binary) => binary.name
+  );
+  const filesInPath = findFolder(root, path)?.files.map(
+    (binary) => binary.name
+  );
+
+  const suggestions =
+    cursorPos <= currentCommand.length
+      ? [
+          ...new Set([
+            ...(binaries ?? []),
+            ...(filesInPath ?? []),
+            "cd",
+            "clear",
+          ]),
+        ].filter((cmd) => cmd.startsWith(currentCommand))
+      : autoCompletePath(currentArg, path, currentCommand === "cd");
+
+  return {
+    suggestions,
+    currentArg:
+      cursorPos <= currentCommand.length ? currentCommand : currentArg,
+    isCommand: cursorPos <= currentCommand.length,
+  };
+}
+
+export function autoCompletePath(
+  command: string,
+  path: string[],
+  showOnlyFolders: boolean
+) {
+  const fullPath = command.startsWith("/") ? [] : [...path];
+  const partialParts = command.split("/").filter((part) => part !== "");
+
+  if (command.endsWith("/")) partialParts.push("");
+
+  while (partialParts.length > 1) {
+    const part = partialParts.shift()!;
+
+    if (part === "..") {
+      fullPath.pop();
+    } else if (part !== ".") {
+      fullPath.push(part);
+    }
+  }
+
+  const prefix = partialParts[0] || "";
+
+  const entries =
+    findFolder(store.getState().fileSystem.root as Folder, fullPath)?.files ??
+    [];
+
+  const historyPrefix = command.split("/").slice(0, -1).join("/");
+
+  let fileNames = entries
+    .filter(
+      (file) =>
+        file.name.startsWith(prefix) &&
+        (!showOnlyFolders || file.type === "folder")
+    )
+    .map(
+      (file) =>
+        `${
+          command.startsWith("/") && !historyPrefix ? "/" : ""
+        }${historyPrefix}${historyPrefix ? "/" : ""}${file.name}${
+          file.type === "folder" ? "/" : ""
+        }`
+    );
+
+  if (command.endsWith(".")) fileNames.push(`${command}/`);
+
+  return fileNames;
 }

@@ -283,7 +283,9 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
           return React.cloneElement<any>(child, {
             ...childProps,
             uid: windowId,
-            size,
+            size: isMaximized
+              ? { width: window.innerWidth, height: window.innerHeight - 42 }
+              : size,
           });
         }
         return child;

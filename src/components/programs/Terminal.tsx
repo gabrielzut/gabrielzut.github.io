@@ -11,12 +11,15 @@ import { WindowOptions } from "../general/WindowOption";
 import { executeBinary, kill } from "../../utils/binaries";
 import { ProgramEntry } from ".";
 import terminalIcon from "../../assets/img/terminal.gif";
-import { printShellInfo } from "../../utils/shellUtils";
+import {
+  autoComplete,
+  getPathFromCommand,
+  printShellInfo,
+} from "../../utils/shellUtils";
 import { GenerateUUID } from "../../utils/generators";
-import { findFolder } from "../../utils/filesystemUtils";
+import { findFileOrFolder } from "../../utils/filesystemUtils";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux";
-import { Folder } from "../../model/file";
 
 interface TerminalProps {
   uid: string;
@@ -39,10 +42,12 @@ export const Terminal: FC<TerminalProps> = ({
   const root = useSelector((state: RootState) => state.fileSystem.root);
   const terminalInputRef = useRef<HTMLSpanElement>(null);
   const [terminalHistory, setTerminalHistory] = useState<ReactNode[]>([]);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
   const execute = useCallback(
     (text?: string) => {
-      const prevHistory = [...terminalHistory];
+      let prevHistory = [...terminalHistory];
 
       prevHistory.push(printShellInfo(isSu, path));
 
@@ -55,30 +60,37 @@ export const Terminal: FC<TerminalProps> = ({
 
           if (command === "cd") {
             if (params.length) {
-              let finalInputPath = params[0].split("/");
+              const newPath = getPathFromCommand(params[1], path);
 
-              if (finalInputPath.length === 0) return;
-
-              finalInputPath = finalInputPath.filter(
-                (pathSlice) => pathSlice.length
+              const file = findFileOrFolder(
+                newPath.filter((pathSlice) => pathSlice.length)
               );
 
-              if (
-                findFolder(
-                  root as Folder,
-                  finalInputPath.filter((pathSlice) => pathSlice.length)
-                ) === null
-              )
-                return;
+              if (file === null) {
+                throw new Error(
+                  `cd: The directory ${params[1]} does not exist.`
+                );
+              } else if (file.type !== "folder") {
+                throw new Error(`cd: '${params[1]}' is not a directory.`);
+              }
 
-              setPath(finalInputPath.filter((pathSlice) => pathSlice.length));
+              setPath(newPath.filter((pathSlice) => pathSlice.length));
             }
-
-            prevHistory.push(<br key={GenerateUUID()} />);
+          } else if (command === "clear") {
+            prevHistory = [];
+          } else if (command === "exit") {
+            kill({ path: [], params: { proccessId: uid } });
           } else {
-            const response = executeBinary(["bin"], command, path, true, {
-              ...params,
-            });
+            const response = executeBinary(
+              ["bin"],
+              command,
+              path,
+              true,
+              {
+                ...params,
+              },
+              "gsh"
+            );
             prevHistory.push(<br key={GenerateUUID()} />, response);
           }
         } catch (e: any) {
@@ -91,10 +103,40 @@ export const Terminal: FC<TerminalProps> = ({
         }
       }
 
-      setTerminalHistory([...prevHistory, <br key={GenerateUUID()} />]);
+      text &&
+        setCommandHistory((prevCommandHistory) => [
+          ...prevCommandHistory,
+          text,
+        ]);
+      setTerminalHistory([
+        ...prevHistory,
+        ...(text !== "clear" ? [<br key={GenerateUUID()} />] : []),
+      ]);
     },
-    [isSu, path, root, terminalHistory]
+    [isSu, path, terminalHistory, uid]
   );
+
+  const focusTextNode = useCallback(() => {
+    terminalInputRef.current?.focus();
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    const range = document.createRange();
+
+    const childNode =
+      terminalInputRef.current?.childNodes[1]?.nodeName === "#text"
+        ? terminalInputRef.current?.childNodes[1]
+        : terminalInputRef.current?.childNodes[0];
+
+    if (childNode?.nodeName === "#text") {
+      range.setStart(childNode as Node, childNode.textContent?.length ?? 0);
+      range.collapse(true);
+
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }, []);
 
   const moveCursorToEnd = useCallback(() => {
     const el = terminalInputRef.current;
@@ -109,59 +151,185 @@ export const Terminal: FC<TerminalProps> = ({
     range.collapse(false);
     sel?.removeAllRanges();
     sel?.addRange(range);
-  }, []);
+
+    focusTextNode();
+  }, [focusTextNode]);
 
   useEffect(() => {
     moveCursorToEnd();
   }, [moveCursorToEnd, terminalHistory]);
 
-  const ensureCursorAfterShellInfo = useCallback(
-    (e: React.MouseEvent | React.KeyboardEvent) => {
-      if (!terminalInputRef.current) return;
+  const getCursorPosition = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return null;
+
+    const range = selection.getRangeAt(0);
+    const container = range.startContainer;
+
+    if (terminalInputRef.current?.contains(container)) {
+      return range.startOffset;
+    }
+    return null;
+  }, []);
+
+  const restoreCursorPosition = useCallback(
+    (cursor: { node: Node; offset: number } | null) => {
+      if (!cursor) return;
 
       const selection = window.getSelection();
-      if (!selection?.rangeCount) return;
-
-      const range = selection.getRangeAt(0);
-      const { startContainer, startOffset } = range;
-
-      const nonEditableSpan = terminalInputRef.current.querySelector(
-        ".terminal-shell-info"
-      );
-
-      if (
-        startContainer === terminalInputRef.current &&
-        startOffset === 0 &&
-        nonEditableSpan
-      ) {
-        const newRange = document.createRange();
-        newRange.setStartAfter(nonEditableSpan);
-        newRange.collapse(true);
+      if (selection) {
+        const range = document.createRange();
+        range.setStart(cursor.node, cursor.offset);
+        range.collapse(true);
         selection.removeAllRanges();
-        selection.addRange(newRange);
+        selection.addRange(range);
       }
     },
     []
   );
 
+  useEffect(() => {
+    const firstSpanElement = terminalInputRef.current?.childNodes[0];
+
+    if (terminalInputRef.current && firstSpanElement?.nodeName === "#text") {
+      const firstElementClone =
+        terminalInputRef.current.childNodes[0].cloneNode(true);
+      terminalInputRef.current.removeChild(
+        terminalInputRef.current.childNodes[0]
+      );
+      terminalInputRef.current.appendChild(firstElementClone);
+      moveCursorToEnd();
+    }
+  }, [
+    getCursorPosition,
+    moveCursorToEnd,
+    restoreCursorPosition,
+    terminalHistory,
+  ]);
+
+  const ensureCursorAfterShellInfo = useCallback(() => {
+    if (!terminalInputRef.current) return;
+
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const { startContainer, startOffset } = range;
+
+    const nonEditableSpan = terminalInputRef.current.querySelector(
+      ".terminal-shell-info"
+    );
+
+    if (
+      startContainer === terminalInputRef.current &&
+      startOffset === 0 &&
+      nonEditableSpan
+    ) {
+      const newRange = document.createRange();
+      newRange.setStartAfter(nonEditableSpan);
+      newRange.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    }
+  }, []);
+
   const handleValidateKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      ensureCursorAfterShellInfo(e);
+      ensureCursorAfterShellInfo();
 
-      const text =
+      let text =
         (e.target as HTMLSpanElement).childNodes.length > 1
           ? (e.target as HTMLSpanElement).childNodes[1]
           : undefined;
 
+      if (e.key === "l" && e.ctrlKey) {
+        execute("clear");
+        e.preventDefault();
+      }
+
+      // if (e.key === "ArrowUp") {
+      //   e.preventDefault();
+      //   text = (e.target as HTMLSpanElement).appendChild(
+      //     document.createTextNode("")
+      //   );
+
+      //   let index = 0;
+      //   setHistoryIndex((prev) => {
+      //     index =
+      //       prev < commandHistory.length ? prev + 1 : commandHistory.length - 1;
+      //     return index;
+      //   });
+      //   text.textContent = commandHistory[commandHistory.length - index];
+      // }
+
+      // if (e.key === "ArrowDown") {
+      //   e.preventDefault();
+
+      //   text = (e.target as HTMLSpanElement).appendChild(
+      //     document.createTextNode("")
+      //   );
+
+      //   let index = 0;
+      //   setHistoryIndex((prev) => {
+      //     index = prev !== 0 ? prev - 1 : prev;
+      //     return index;
+      //   });
+      //   text.textContent = commandHistory[commandHistory.length - index];
+      // }
+
       if (e.key === "Backspace" && !text) e.preventDefault();
 
+      if (e.key === "Tab" && text?.textContent) {
+        const cursorPosition = getCursorPosition();
+
+        const autoCompleteOptions = autoComplete(
+          text.textContent,
+          path,
+          cursorPosition ?? 0
+        );
+
+        if (autoCompleteOptions.suggestions.length === 1) {
+          text.textContent = `${text.textContent.slice(
+            0,
+            cursorPosition
+              ? cursorPosition - autoCompleteOptions.currentArg.length
+              : 0
+          )}${autoCompleteOptions.suggestions[0]}${text.textContent.slice(
+            cursorPosition
+              ? cursorPosition + autoCompleteOptions.currentArg.length
+              : 0
+          )}${autoCompleteOptions.isCommand ? "\u00A0" : ""}`;
+        } else if (autoCompleteOptions.suggestions.length > 1) {
+          setTerminalHistory((prevHistory) => [
+            ...prevHistory,
+            printShellInfo(isSu, path),
+            text?.textContent ?? "",
+            <br key={GenerateUUID()} />,
+            autoCompleteOptions.suggestions.sort().join(" "),
+            <br key={GenerateUUID()} />,
+          ]);
+        }
+
+        moveCursorToEnd();
+        e.preventDefault();
+      }
+
       if (e.key === "Enter") {
+        setHistoryIndex(0);
         execute(text?.textContent ?? undefined);
         if (text) text.remove();
         e.preventDefault();
       }
     },
-    [ensureCursorAfterShellInfo, execute]
+    [
+      commandHistory,
+      ensureCursorAfterShellInfo,
+      execute,
+      getCursorPosition,
+      isSu,
+      moveCursorToEnd,
+      path,
+    ]
   );
 
   return (

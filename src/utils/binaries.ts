@@ -5,6 +5,7 @@ import {
   calculateFileSize,
   createFileOrFolder,
   findFileOrFolder,
+  isValidPath,
 } from "./filesystemUtils";
 import {
   addProgram,
@@ -59,7 +60,8 @@ export function executeBinary(
   fileName: string,
   currPath?: string[],
   disableErrorHandling = false,
-  params: any = {}
+  params: any = {},
+  commandName?: string
 ) {
   return errorHandler(() => {
     let file = findFileOrFolder([...path, fileName]);
@@ -71,11 +73,15 @@ export function executeBinary(
     if (file && file.type === "file" && file.command) {
       return file.command({ path: currPath, params });
     } else {
-      throw new Error(
-        `Cannot execute /${path.join(
-          "/"
-        )}/${fileName}, file not found or is not executable.`
-      );
+      if (commandName) {
+        throw new Error(`${commandName}: ${fileName}: command not found...`);
+      } else {
+        throw new Error(
+          `Cannot execute /${path.join(
+            "/"
+          )}/${fileName}, file not found or is not executable.`
+        );
+      }
     }
   }, disableErrorHandling);
 }
@@ -93,18 +99,40 @@ interface BinaryParams<T> {
   path: string[];
 }
 
+type TextParams = {
+  textParams: string[];
+};
+
+function isTextParams(x: any): x is TextParams {
+  return (x as TextParams).textParams !== undefined;
+}
+
 export function mkdir({
   params,
   path,
-}: BinaryParams<{ path?: string[]; name?: string }>) {
-  if (!params.name) throw new Error(`touch: No file name was informed.`);
+}: BinaryParams<
+  { path?: string[]; name?: string } | { textParams: string[] }
+>) {
+  let name;
+  let filePath;
 
-  return createFileOrFolder(
-    params.path ?? path,
-    params.name,
-    "folder",
-    "mkdir"
-  );
+  if (isTextParams(params)) {
+    if (params.textParams.length && isValidPath(params.textParams[0])) {
+      const fileParam = params.textParams[0]
+        .split("/")
+        .filter((entry) => entry.length > 0);
+
+      name = fileParam.slice(-1)[0];
+      filePath = fileParam.slice(0, -1);
+    }
+  } else {
+    name = params.name;
+    filePath = params.path;
+  }
+
+  if (!name) throw new Error(`touch: No file name was informed.`);
+
+  return createFileOrFolder(filePath ?? path, name, "folder", "mkdir");
 }
 
 export function touch({
