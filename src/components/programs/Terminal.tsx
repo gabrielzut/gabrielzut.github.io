@@ -63,12 +63,12 @@ export const Terminal: FC<TerminalProps> = ({
               const newPath = getPathFromCommand(params[1], path);
 
               const file = findFileOrFolder(
-                newPath.filter((pathSlice) => pathSlice.length)
+                newPath.filter((pathSlice) => pathSlice.length),
               );
 
               if (file === null) {
                 throw new Error(
-                  `cd: The directory ${params[1]} does not exist.`
+                  `cd: The directory ${params[1]} does not exist.`,
                 );
               } else if (file.type !== "folder") {
                 throw new Error(`cd: '${params[1]}' is not a directory.`);
@@ -87,9 +87,9 @@ export const Terminal: FC<TerminalProps> = ({
               path,
               true,
               {
-                ...params,
+                textParams: params.slice(1),
               },
-              "gsh"
+              "gsh",
             );
             prevHistory.push(<br key={GenerateUUID()} />, response);
           }
@@ -98,7 +98,7 @@ export const Terminal: FC<TerminalProps> = ({
             <br key={GenerateUUID()} />,
             <span key={GenerateUUID()} className="terminal-red">
               {e?.message}
-            </span>
+            </span>,
           );
         }
       }
@@ -113,7 +113,7 @@ export const Terminal: FC<TerminalProps> = ({
         ...(text !== "clear" ? [<br key={GenerateUUID()} />] : []),
       ]);
     },
-    [isSu, path, terminalHistory, uid]
+    [isSu, path, terminalHistory, uid],
   );
 
   const focusTextNode = useCallback(() => {
@@ -185,7 +185,7 @@ export const Terminal: FC<TerminalProps> = ({
         selection.addRange(range);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export const Terminal: FC<TerminalProps> = ({
       const firstElementClone =
         terminalInputRef.current.childNodes[0].cloneNode(true);
       terminalInputRef.current.removeChild(
-        terminalInputRef.current.childNodes[0]
+        terminalInputRef.current.childNodes[0],
       );
       terminalInputRef.current.appendChild(firstElementClone);
       moveCursorToEnd();
@@ -205,6 +205,7 @@ export const Terminal: FC<TerminalProps> = ({
     moveCursorToEnd,
     restoreCursorPosition,
     terminalHistory,
+    historyIndex,
   ]);
 
   const ensureCursorAfterShellInfo = useCallback(() => {
@@ -217,7 +218,7 @@ export const Terminal: FC<TerminalProps> = ({
     const { startContainer, startOffset } = range;
 
     const nonEditableSpan = terminalInputRef.current.querySelector(
-      ".terminal-shell-info"
+      ".terminal-shell-info",
     );
 
     if (
@@ -247,35 +248,44 @@ export const Terminal: FC<TerminalProps> = ({
         e.preventDefault();
       }
 
-      // if (e.key === "ArrowUp") {
-      //   e.preventDefault();
-      //   text = (e.target as HTMLSpanElement).appendChild(
-      //     document.createTextNode("")
-      //   );
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
 
-      //   let index = 0;
-      //   setHistoryIndex((prev) => {
-      //     index =
-      //       prev < commandHistory.length ? prev + 1 : commandHistory.length - 1;
-      //     return index;
-      //   });
-      //   text.textContent = commandHistory[commandHistory.length - index];
-      // }
+        let index =
+          historyIndex < commandHistory.length
+            ? historyIndex + 1
+            : commandHistory.length - 1;
 
-      // if (e.key === "ArrowDown") {
-      //   e.preventDefault();
+        setHistoryIndex(index);
 
-      //   text = (e.target as HTMLSpanElement).appendChild(
-      //     document.createTextNode("")
-      //   );
+        if (!text) {
+          (e.target as HTMLSpanElement).appendChild(
+            document.createTextNode(
+              commandHistory[commandHistory.length - index],
+            ),
+          );
+        } else {
+          text.textContent = commandHistory[commandHistory.length - index];
+        }
+      }
 
-      //   let index = 0;
-      //   setHistoryIndex((prev) => {
-      //     index = prev !== 0 ? prev - 1 : prev;
-      //     return index;
-      //   });
-      //   text.textContent = commandHistory[commandHistory.length - index];
-      // }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+
+        let index = historyIndex !== 0 ? historyIndex - 1 : historyIndex;
+
+        setHistoryIndex(index);
+
+        if (!text) {
+          (e.target as HTMLSpanElement).appendChild(
+            document.createTextNode(
+              commandHistory[commandHistory.length - index],
+            ),
+          );
+        } else {
+          text.textContent = commandHistory[commandHistory.length - index];
+        }
+      }
 
       if (e.key === "Backspace" && !text) e.preventDefault();
 
@@ -285,7 +295,7 @@ export const Terminal: FC<TerminalProps> = ({
         const autoCompleteOptions = autoComplete(
           text.textContent,
           path,
-          cursorPosition ?? 0
+          cursorPosition ?? 0,
         );
 
         if (autoCompleteOptions.suggestions.length === 1) {
@@ -293,11 +303,11 @@ export const Terminal: FC<TerminalProps> = ({
             0,
             cursorPosition
               ? cursorPosition - autoCompleteOptions.currentArg.length
-              : 0
+              : 0,
           )}${autoCompleteOptions.suggestions[0]}${text.textContent.slice(
             cursorPosition
               ? cursorPosition + autoCompleteOptions.currentArg.length
-              : 0
+              : 0,
           )}${autoCompleteOptions.isCommand ? "\u00A0" : ""}`;
         } else if (autoCompleteOptions.suggestions.length > 1) {
           setTerminalHistory((prevHistory) => [
@@ -326,10 +336,11 @@ export const Terminal: FC<TerminalProps> = ({
       ensureCursorAfterShellInfo,
       execute,
       getCursorPosition,
+      historyIndex,
       isSu,
       moveCursorToEnd,
       path,
-    ]
+    ],
   );
 
   return (
@@ -355,7 +366,7 @@ export const Terminal: FC<TerminalProps> = ({
               ],
             },
           ],
-          [uid]
+          [uid],
         )}
       />
       <div

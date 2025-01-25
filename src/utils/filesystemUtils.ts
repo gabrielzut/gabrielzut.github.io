@@ -15,7 +15,7 @@ export function findFileOrFolder(path: string[]): GeneralFile | null {
   const containingFolderPath = path.slice(0, -1);
   const containingFolder = findFolder(
     store.getState().fileSystem.root as Folder,
-    containingFolderPath
+    containingFolderPath,
   );
 
   return containingFolder?.files.find((file) => file.name === fileName) || null;
@@ -23,14 +23,14 @@ export function findFileOrFolder(path: string[]): GeneralFile | null {
 
 export function findFolder(
   currentFolder: Folder,
-  pathParts: string[]
+  pathParts: string[],
 ): Folder | null {
   if (pathParts.length === 0) return currentFolder;
 
   const [nextFolderName, ...remainingPathParts] = pathParts;
 
   const nextFolder = currentFolder.files.find(
-    (file) => file.type === "folder" && file.name === nextFolderName
+    (file) => file.type === "folder" && file.name === nextFolderName,
   ) as Folder | undefined;
 
   if (!nextFolder) {
@@ -42,7 +42,7 @@ export function findFolder(
 
 export function getUniqueFileName(
   existingFiles: GeneralFile[],
-  newFileName: string
+  newFileName: string,
 ) {
   const fileBaseName = newFileName.replace(/\(\d+\)$/, "").trim();
   let uniqueName = fileBaseName;
@@ -61,7 +61,7 @@ export function calculateFileSize(file: GeneralFile) {
     return (file as Folder).files
       .filter((subFile) => subFile.type === "file")
       .map((subFile) => (subFile as File).content.length)
-      .reduce((prev, curr) => prev + curr);
+      .reduce((prev, curr) => prev + curr, 0);
   } else {
     return (file as File).content.length;
   }
@@ -73,13 +73,13 @@ export function createFileOrFolder(
   type: "file" | "folder",
   command: string,
   content = "",
-  files: GeneralFile[] = []
+  files: GeneralFile[] = [],
 ) {
   const folder = findFolder(store.getState().fileSystem.root as Folder, path);
 
   if (!folder)
     throw new Error(
-      `${command}: No such file or directory: /${path.join("/")}`
+      `${command}: No such file or directory: /${path.join("/")}`,
     );
 
   const finalFileName = getUniqueFileName(folder.files, name);
@@ -92,9 +92,10 @@ export function createFileOrFolder(
         icon: type === "folder" ? folderIcon : blankFileIcon,
         type: type,
         ...(type === "folder" ? { files } : {}),
+        owner: "user",
       },
       path,
-    })
+    }),
   );
 
   return finalFileName;

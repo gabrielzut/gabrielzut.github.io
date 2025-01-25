@@ -1,41 +1,42 @@
 .terminal {
-  &-container {
-    background-color: #282828;
-    width: 100%;
-    overflow-y: auto;
-    vertical-align: bottom;
-    line-height: 20px;
-  }
+    &-container {
+        background-color: #282828;
+        width: 100%;
+        overflow-y: auto;
+        vertical-align: bottom;
+        line-height: 20px;
+    }
 
-  &-history {
-    font-size: 20px;
-    font-family: "MSDOS";
-    color: white;
-  }
+    &-history {
+        font-size: 20px;
+        font-family: "MSDOS";
+        color: white;
+        white-space: break-spaces;
+    }
 
-  &-input {
-    background-color: transparent;
-    border: none;
-    outline: none;
-    font-size: 20px;
-    font-family: "MSDOS";
-    color: white;
-    width: 100%;
-    overflow-y: hidden;
-    height: auto;
-    display: block;
-    resize: none;
-  }
+    &-input {
+        background-color: transparent;
+        border: none;
+        outline: none;
+        font-size: 20px;
+        font-family: "MSDOS";
+        color: white;
+        width: 100%;
+        overflow-y: hidden;
+        height: auto;
+        display: block;
+        resize: none;
+    }
 
-  &-green {
-    color: rgb(0, 255, 0);
-  }
+    &-green {
+        color: rgb(0, 255, 0);
+    }
 
-  &-red {
-    color: rgb(255, 0, 0);
-  }
+    &-red {
+        color: rgb(255, 0, 0);
+    }
 
-  &-shell-info {
-    user-select: none;
-  }
+    &-shell-info {
+        user-select: none;
+    }
 }

@@ -1,6 +1,7 @@
 export interface File {
   name: string;
   type: string;
+  owner: string;
   icon?: string;
   content: string;
   command?: Function;

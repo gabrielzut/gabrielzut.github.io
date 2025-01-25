@@ -29,8 +29,8 @@ export function errorHandler(func: Function, disableErrorHandling: boolean) {
         Program.of({
           ...errorProgramEntry,
           props: { text: e?.message ?? e ?? "Unknown error", type: "error" },
-        })
-      )
+        }),
+      ),
     );
   }
 }
@@ -49,6 +49,7 @@ export const defaultBinaries = [
   { name: "pwd", executable: pwd },
   { name: "rm", executable: rm },
   { name: "sh", executable: sh },
+  { name: "gsh", executable: sh },
   { name: "touch", executable: touch },
   { name: "uname", executable: uname },
   { name: "fileExplorer", executable: () => openProgram(fileExplorerEntry) },
@@ -61,7 +62,7 @@ export function executeBinary(
   currPath?: string[],
   disableErrorHandling = false,
   params: any = {},
-  commandName?: string
+  commandName?: string,
 ) {
   return errorHandler(() => {
     let file = findFileOrFolder([...path, fileName]);
@@ -78,8 +79,8 @@ export function executeBinary(
       } else {
         throw new Error(
           `Cannot execute /${path.join(
-            "/"
-          )}/${fileName}, file not found or is not executable.`
+            "/",
+          )}/${fileName}, file not found or is not executable.`,
         );
       }
     }
@@ -163,7 +164,7 @@ export function rm({
       throw new Error(
         `rm: Cannot remove '${
           path[path.length - 1]
-        }': Is a directory (use -r to remove directories)`
+        }': Is a directory (use -r to remove directories)`,
       );
   }
 
@@ -199,13 +200,13 @@ export function cp({
 
   if (!file)
     throw new Error(
-      `cp: /${params.sourcePath.join("/")}: No such file or directory`
+      `cp: /${params.sourcePath.join("/")}: No such file or directory`,
     );
 
   if (file.type === "folder") {
     if (!params.r) {
       throw new Error(
-        `cp: Cannot copy directory '${params.sourcePath.join("/")}' without -r`
+        `cp: Cannot copy directory '${params.sourcePath.join("/")}' without -r`,
       );
     }
 
@@ -217,7 +218,7 @@ export function cp({
     if (destFile?.type === "file") {
       if (!params.f) {
         throw new Error(
-          `cp: File '${params.destPath.join("/")}' already exists`
+          `cp: File '${params.destPath.join("/")}' already exists`,
         );
       }
       rm({ path, params: { files: [params.destPath], r: true, f: true } });
@@ -230,7 +231,7 @@ export function cp({
     file?.type as "file" | "folder",
     "cp",
     file.type === "file" ? (file as File)?.content : undefined,
-    file.type === "folder" ? (file as Folder).files : undefined
+    file.type === "folder" ? (file as Folder).files : undefined,
   );
 }
 
@@ -283,25 +284,50 @@ export function hostname() {
 export function ls({
   params,
   path,
-}: BinaryParams<{ path?: string[]; l?: boolean; a?: boolean }>) {
-  const fileOrFolder = findFileOrFolder(params.path ?? path);
+}: BinaryParams<
+  { path?: string[]; l?: boolean; a?: boolean } | { textParams: string[] }
+>) {
+  let a: boolean | undefined;
+  let l: boolean | undefined;
+  let paramPath: string[] | undefined;
+
+  if (isTextParams(params)) {
+    for (const param of params.textParams) {
+      console.log(param);
+      if (param.startsWith("-") && param.length > 1) {
+        if (param.includes("a")) a = true;
+        if (param.includes("l")) l = true;
+        const invalidOptions = param.slice(1).match(/[^al]/gi);
+        if (invalidOptions?.length) {
+          throw new Error(`ls: invalid option -- "${invalidOptions[0]}"`);
+        }
+      } else {
+        paramPath = param.split("/");
+      }
+    }
+  } else {
+    paramPath = params.path;
+    a = params.a;
+    l = params.l;
+  }
+  const fileOrFolder = findFileOrFolder(paramPath ?? path);
 
   let visibleFiles: GeneralFile[] =
     fileOrFolder?.type === "file" ? [fileOrFolder] : [];
 
   if (fileOrFolder?.type === "folder") {
     visibleFiles = (fileOrFolder as Folder).files.filter(
-      (file) => params.a || !file.name.startsWith(".")
+      (file) => a || !file.name.startsWith("."),
     );
   }
 
   if (visibleFiles.length) {
-    if (params.l) {
+    if (l) {
       return visibleFiles
         .map((file) => {
           const type = file.type === "folder" ? "d" : "-";
           const size = `${calculateFileSize(file)}B`;
-          return `${type} ${file.name} ${size}`;
+          return `${type} ${file.owner} ${size} ${file.name}`;
         })
         .join("\n");
     } else {
@@ -316,13 +342,13 @@ export function ps({ params }: BinaryParams<{ e?: boolean; l?: boolean }>) {
   const processes = store.getState().processManager.programs;
 
   const filteredProcesses = processes.filter(
-    (proc) => params.e || !proc.isSystemOwned
+    (proc) => params.e || !proc.isSystemOwned,
   );
 
   if (params.l) {
     return filteredProcesses.map((proc) => {
       return `PID: ${proc.id} CMD: ${proc.name} MEM: ${Math.round(
-        Math.random() * 100
+        Math.random() * 100,
       )}MB CPU: ${Math.round(Math.random() * 3)}% STATE: RUNNING`;
     });
   }
@@ -359,8 +385,8 @@ export function mv({
   } catch (error) {
     throw new Error(
       `mv: Error moving from ${params.source.join(
-        "/"
-      )} to ${params.destination.join("/")}: ${error}`
+        "/",
+      )} to ${params.destination.join("/")}: ${error}`,
     );
   }
 }
