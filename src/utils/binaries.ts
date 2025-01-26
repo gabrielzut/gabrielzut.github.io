@@ -5,7 +5,7 @@ import {
   calculateFileSize,
   createFileOrFolder,
   findFileOrFolder,
-  isValidPath,
+  toAbsolutePath,
 } from "./filesystemUtils";
 import {
   addProgram,
@@ -118,61 +118,125 @@ export function mkdir({
   let filePath;
 
   if (isTextParams(params)) {
-    if (params.textParams.length && isValidPath(params.textParams[0])) {
-      const fileParam = params.textParams[0]
-        .split("/")
-        .filter((entry) => entry.length > 0);
+    try {
+      if (params.textParams.length) {
+        const fileParam = toAbsolutePath(path, params.textParams[0]);
 
-      name = fileParam.slice(-1)[0];
-      filePath = fileParam.slice(0, -1);
+        name = fileParam.slice(-1)[0];
+        filePath = fileParam.slice(0, -1);
+      }
+    } catch {
+      throw new Error("mkdir: Invalid file name/path.");
     }
   } else {
     name = params.name;
     filePath = params.path;
   }
 
-  if (!name) throw new Error(`touch: No file name was informed.`);
+  if (!name) throw new Error(`mkdir: No folder name was informed.`);
 
-  return createFileOrFolder(filePath ?? path, name, "folder", "mkdir");
+  createFileOrFolder(filePath ?? path, name, "folder", "mkdir");
 }
 
 export function touch({
   params,
   path,
-}: BinaryParams<{ path?: string[]; name?: string }>) {
-  if (!params.name) throw new Error("touch: No file name was informed.");
+}: BinaryParams<
+  { path?: string[]; name?: string } | { textParams: string[] }
+>) {
+  let filePath: string[] | undefined;
+  let fileName;
 
-  return createFileOrFolder(params.path ?? path, params.name, "file", "touch");
+  if (isTextParams(params)) {
+    try {
+      if (params.textParams.length) {
+        const fileParam = toAbsolutePath(path, params.textParams[0]);
+
+        fileName = fileParam.slice(-1)[0];
+        filePath = fileParam.slice(0, -1);
+      }
+    } catch {
+      throw new Error("touch: Invalid file name/path.");
+    }
+  } else {
+    fileName = params.name;
+    filePath = params.path;
+  }
+
+  if (!fileName) throw new Error("touch: No file name was informed.");
+
+  return createFileOrFolder(filePath ?? path, fileName, "file", "touch");
 }
 
 export function rm({
   params,
   path,
-}: BinaryParams<{ files?: string[][]; r?: boolean; f?: boolean }>) {
-  if (!params.files?.length) throw new Error(`rm: missing operand`);
+}: BinaryParams<
+  { files?: string[][]; r?: boolean; f?: boolean } | { textParams: string[] }
+>) {
+  let files: string[][] | undefined;
+  let f: boolean | undefined;
+  let r: boolean | undefined;
 
-  for (const path of params.files) {
+  if (isTextParams(params)) {
+    for (const param of params.textParams) {
+      if (param.startsWith("-") && param.length > 1) {
+        if (param.includes("r")) r = true;
+        if (param.includes("f")) f = true;
+        const invalidOptions = param.slice(1).match(/[^rf]/gi);
+        if (invalidOptions?.length) {
+          throw new Error(`rm: invalid option -- "${invalidOptions[0]}"`);
+        }
+      } else {
+        try {
+          if (!files) files = [];
+          files.push(toAbsolutePath(path, param));
+        } catch {
+          throw new Error(`rm: invalid file: "${param}"`);
+        }
+      }
+    }
+  } else {
+    files = params.files;
+    f = params.f;
+    r = params.r;
+  }
+
+  if (!files?.length) throw new Error(`rm: missing operand`);
+
+  for (const path of files) {
     const file = findFileOrFolder(path);
 
     if (!file) {
-      if (!params.f)
+      if (!f)
         throw new Error(`rm: No such file or directory: /${path.join("/")}`);
       return;
     }
 
-    if (file?.type === "folder" && !params.r)
+    if (file?.type === "folder" && !r)
       throw new Error(
         `rm: Cannot remove '${
-          path[path.length - 1]
+          path[path.length - 1] ?? "/"
         }': Is a directory (use -r to remove directories)`,
       );
   }
 
-  for (const path of params.files) store.dispatch(deleteFile(path));
+  for (const path of files) store.dispatch(deleteFile(path));
 }
 
-export function cat({ params, path }: BinaryParams<{ path?: string[] }>) {
-  const file = findFileOrFolder(params.path ?? path);
+export function cat({
+  params,
+  path,
+}: BinaryParams<{ path?: string[] } | { textParams: string[] }>) {
+  let filePath: string[] | undefined;
+
+  if (isTextParams(params)) {
+    filePath = toAbsolutePath(path, params.textParams[0]);
+  } else {
+    filePath = params.path;
+  }
+
+  const file = findFileOrFolder(filePath ?? path);
 
   if (!file)
     throw new Error(`cat: /${path.join("/")}: No such file or directory`);
@@ -186,48 +250,79 @@ export function cat({ params, path }: BinaryParams<{ path?: string[] }>) {
 export function cp({
   params,
   path,
-}: BinaryParams<{
-  sourcePath?: string[];
-  destPath?: string[];
-  r?: boolean;
-  f?: boolean;
-}>) {
-  if (!params.sourcePath || !params.destPath)
-    throw new Error("cp: missing operand");
+}: BinaryParams<
+  | {
+      sourcePath?: string[];
+      destPath?: string[];
+      r?: boolean;
+      f?: boolean;
+    }
+  | { textParams: string[] }
+>) {
+  let r: boolean | undefined;
+  let f: boolean | undefined;
+  let sourcePath: string[] | undefined;
+  let destPath: string[] | undefined;
 
-  const file = findFileOrFolder(params.sourcePath);
-  const destFile = findFileOrFolder(params.destPath);
+  if (isTextParams(params)) {
+    const files: string[][] = [];
+    for (const param of params.textParams) {
+      if (param.startsWith("-") && param.length > 1) {
+        if (param.includes("r")) r = true;
+        if (param.includes("f")) f = true;
+        const invalidOptions = param.slice(1).match(/[^rf]/gi);
+        if (invalidOptions?.length) {
+          throw new Error(`cp: invalid option -- "${invalidOptions[0]}"`);
+        }
+      } else {
+        try {
+          files.push(toAbsolutePath(path, param));
+        } catch {
+          throw new Error(`cp: invalid file: "${param}"`);
+        }
+      }
+    }
+
+    if (files.length) sourcePath = files[0];
+    if (files.length > 1) destPath = files[1];
+  } else {
+    sourcePath = params.sourcePath;
+    destPath = params.destPath;
+    r = params.r;
+    f = params.f;
+  }
+
+  if (!sourcePath || !destPath) throw new Error("cp: missing operand");
+
+  const file = findFileOrFolder(sourcePath);
+  const destFile = findFileOrFolder(destPath);
 
   if (!file)
-    throw new Error(
-      `cp: /${params.sourcePath.join("/")}: No such file or directory`,
-    );
+    throw new Error(`cp: /${sourcePath.join("/")}: No such file or directory`);
 
   if (file.type === "folder") {
-    if (!params.r) {
+    if (!r) {
       throw new Error(
-        `cp: Cannot copy directory '${params.sourcePath.join("/")}' without -r`,
+        `cp: Cannot copy directory '${sourcePath.join("/")}' without -r`,
       );
     }
 
-    const destFile = findFileOrFolder(params.destPath);
+    const destFile = findFileOrFolder(destPath);
 
     if (destFile?.type === "file")
       throw new Error("cp: Cannot override file with a directory.");
   } else {
     if (destFile?.type === "file") {
-      if (!params.f) {
-        throw new Error(
-          `cp: File '${params.destPath.join("/")}' already exists`,
-        );
+      if (!f) {
+        throw new Error(`cp: File '${destPath.join("/")}' already exists`);
       }
-      rm({ path, params: { files: [params.destPath], r: true, f: true } });
+      rm({ path, params: { files: [destPath], r: true, f: true } });
     }
   }
 
   createFileOrFolder(
-    destFile === null ? params.destPath.slice(0, -1) : params.destPath,
-    destFile === null ? params.destPath.slice(-1)[0] : file?.name,
+    destFile === null ? destPath.slice(0, -1) : destPath,
+    destFile === null ? destPath.slice(-1)[0] : file?.name,
     file?.type as "file" | "folder",
     "cp",
     file.type === "file" ? (file as File)?.content : undefined,
@@ -235,7 +330,9 @@ export function cp({
   );
 }
 
-export function date({ params }: BinaryParams<{ format?: string }>) {
+export function date({
+  params,
+}: BinaryParams<{ format?: string } | { textParams: string[] }>) {
   const now = new Date();
 
   const placeholders: { [key: string]: string } = {
@@ -247,18 +344,36 @@ export function date({ params }: BinaryParams<{ format?: string }>) {
     "%S": String(now.getSeconds()).padStart(2, "0"),
   };
 
-  if (!params.format) {
-    params.format = "%Y-%m-%d %H:%M:%S";
+  let format: string | undefined;
+
+  if (isTextParams(params)) {
+    format = params.textParams.join(" ");
+  } else {
+    format = params.format;
   }
 
-  return params.format.replace(/%[YmdHMS]/g, (match) => placeholders[match]);
+  if (!format) {
+    format = "%Y-%m-%d %H:%M:%S";
+  }
+
+  return format.replace(/%[YmdHMS]/g, (match) => placeholders[match]);
 }
 
-export function echo({ params }: BinaryParams<{ args?: string[] }>) {
+export function echo({
+  params,
+}: BinaryParams<{ args?: string[] } | { textParams: string[] }>) {
   const options = { newline: true };
   const strings: string[] = [];
 
-  for (const arg of params.args ?? []) {
+  let args: string[] | undefined;
+
+  if (isTextParams(params)) {
+    args = params.textParams;
+  } else {
+    args = params.args;
+  }
+
+  for (const arg of args ?? []) {
     if (arg === "-n") {
       options.newline = false;
     } else {
@@ -271,10 +386,20 @@ export function echo({ params }: BinaryParams<{ args?: string[] }>) {
   return options.newline ? output + "\n" : output;
 }
 
-export function kill({ params }: BinaryParams<{ proccessId?: string }>) {
-  if (!params.proccessId) throw new Error("kill: missing operand");
+export function kill({
+  params,
+}: BinaryParams<{ processId?: string } | { textParams: string[] }>) {
+  let pid: string | undefined;
 
-  store.dispatch(closeProgram(params.proccessId));
+  if (isTextParams(params)) {
+    pid = params.textParams[0];
+  } else {
+    pid = params.processId;
+  }
+
+  if (!pid) throw new Error("kill: missing operand");
+
+  store.dispatch(closeProgram(pid));
 }
 
 export function hostname() {
@@ -293,7 +418,6 @@ export function ls({
 
   if (isTextParams(params)) {
     for (const param of params.textParams) {
-      console.log(param);
       if (param.startsWith("-") && param.length > 1) {
         if (param.includes("a")) a = true;
         if (param.includes("l")) l = true;
@@ -302,7 +426,7 @@ export function ls({
           throw new Error(`ls: invalid option -- "${invalidOptions[0]}"`);
         }
       } else {
-        paramPath = param.split("/");
+        paramPath = toAbsolutePath(path, param);
       }
     }
   } else {
@@ -310,6 +434,7 @@ export function ls({
     a = params.a;
     l = params.l;
   }
+
   const fileOrFolder = findFileOrFolder(paramPath ?? path);
 
   let visibleFiles: GeneralFile[] =
@@ -331,29 +456,54 @@ export function ls({
         })
         .join("\n");
     } else {
-      return visibleFiles.map((file) => file.name).join("\n");
+      return visibleFiles.map((file) => file.name).join("  ");
     }
   }
 
   return " ";
 }
 
-export function ps({ params }: BinaryParams<{ e?: boolean; l?: boolean }>) {
+export function ps({
+  params,
+}: BinaryParams<{ e?: boolean; l?: boolean } | { textParams: string[] }>) {
   const processes = store.getState().processManager.programs;
 
-  const filteredProcesses = processes.filter(
-    (proc) => params.e || !proc.isSystemOwned,
-  );
+  let e: boolean | undefined;
+  let l: boolean | undefined;
 
-  if (params.l) {
-    return filteredProcesses.map((proc) => {
-      return `PID: ${proc.id} CMD: ${proc.name} MEM: ${Math.round(
-        Math.random() * 100,
-      )}MB CPU: ${Math.round(Math.random() * 3)}% STATE: RUNNING`;
-    });
+  if (isTextParams(params)) {
+    for (const param of params.textParams) {
+      if (param.startsWith("-") && param.length > 1) {
+        if (param.includes("e")) e = true;
+        if (param.includes("l")) l = true;
+        const invalidOptions = param.slice(1).match(/[^el]/gi);
+        if (invalidOptions?.length) {
+          throw new Error(`ps: invalid option -- "${invalidOptions[0]}"`);
+        }
+      } else {
+        throw new Error(`ps: invalid option -- "${param}"`);
+      }
+    }
+  } else {
+    e = params.e;
+    l = params.l;
   }
 
-  return filteredProcesses.map((proc) => `${proc.id} ${proc.name}`);
+  const filteredProcesses = processes.filter(
+    (proc) => e || !proc.isSystemOwned,
+  );
+
+  if (l) {
+    return filteredProcesses
+      .map((proc) => {
+        return `PID: ${proc.id} CMD: ${proc.name} MEM: ${Math.round(
+          Math.random() * 100,
+        )}MB CPU: ${Math.round(Math.random() * 3)}% STATE: RUNNING`;
+      })
+      .join("\n");
+  }
+
+  return filteredProcesses.map((proc) => `${proc.id} ${proc.name}`).join("\n");
 }
 
 export function pwd({ path }: BinaryParams<{}>) {
@@ -363,52 +513,116 @@ export function pwd({ path }: BinaryParams<{}>) {
 export function mv({
   params,
   path,
-}: BinaryParams<{
-  source?: string[];
-  destination?: string[];
-  f?: boolean;
-}>) {
-  if (!params.source || !params.destination)
-    throw new Error("mv: Missing parameters");
+}: BinaryParams<
+  | {
+      source?: string[];
+      destination?: string[];
+      f?: boolean;
+    }
+  | { textParams: string[] }
+>) {
+  let source: string[] | undefined;
+  let destination: string[] | undefined;
+  let f: boolean | undefined;
+
+  if (isTextParams(params)) {
+    const files: string[][] = [];
+    for (const param of params.textParams) {
+      if (param.startsWith("-") && param.length > 1) {
+        if (param.includes("f")) f = true;
+        const invalidOptions = param.slice(1).match(/[^f]/gi);
+        if (invalidOptions?.length) {
+          throw new Error(`mv: invalid option -- "${invalidOptions[0]}"`);
+        }
+      } else {
+        try {
+          files.push(toAbsolutePath(path, param));
+        } catch {
+          throw new Error(`mv: invalid file: "${param}"`);
+        }
+      }
+    }
+
+    if (files.length) source = files[0];
+    if (files.length > 1) destination = files[1];
+  } else {
+    source = params.source;
+    destination = params.destination;
+    f = params.f;
+  }
+
+  if (!source || !destination) throw new Error("mv: Missing parameters");
 
   try {
     cp({
       path,
       params: {
-        sourcePath: params.source,
-        destPath: params.destination,
+        sourcePath: source,
+        destPath: destination,
         r: true,
-        f: params.f,
+        f,
       },
     });
-    rm({ path, params: { files: [params.source], r: true, f: params.f } });
+    rm({ path, params: { files: [source], r: true, f } });
   } catch (error) {
     throw new Error(
-      `mv: Error moving from ${params.source.join(
+      `mv: Error moving from ${source.join(
         "/",
-      )} to ${params.destination.join("/")}: ${error}`,
+      )} to ${destination.join("/")}: ${error}`,
     );
   }
 }
 
 export function uname({
   params,
-}: BinaryParams<{
-  s?: boolean;
-  n?: boolean;
-  r?: boolean;
-  m?: boolean;
-  a?: boolean;
-}>): string {
-  if (!params.a && !params.s && !params.n && !params.r && !params.m) {
+}: BinaryParams<
+  | {
+      s?: boolean;
+      n?: boolean;
+      r?: boolean;
+      m?: boolean;
+      a?: boolean;
+    }
+  | { textParams: string[] }
+>): string {
+  let s: boolean | undefined;
+  let n: boolean | undefined;
+  let r: boolean | undefined;
+  let m: boolean | undefined;
+  let a: boolean | undefined;
+
+  if (isTextParams(params)) {
+    for (const param of params.textParams) {
+      if (param.startsWith("-") && param.length > 1) {
+        if (param.includes("s")) s = true;
+        if (param.includes("n")) n = true;
+        if (param.includes("r")) r = true;
+        if (param.includes("m")) m = true;
+        if (param.includes("a")) a = true;
+        const invalidOptions = param.slice(1).match(/[^snrma]/gi);
+        if (invalidOptions?.length) {
+          throw new Error(`uname: invalid option -- "${invalidOptions[0]}"`);
+        }
+      } else {
+        throw new Error(`uname: invalid option: "${param}"`);
+      }
+    }
+  } else {
+    s = params.s;
+    n = params.n;
+    r = params.r;
+    m = params.m;
+    a = params.a;
+  }
+  if (!a && !s && !n && !r && !m) {
     return system.systemName;
   }
 
   const result: string[] = [];
-  if (params.s || params.a) result.push(system.systemName);
-  if (params.n || params.a) result.push(system.hostName);
-  if (params.r || params.a) result.push(system.kernelVersion);
-  if (params.m || params.a) result.push(system.architecture);
+  if (s || a) result.push(system.systemName);
+  if (n || a) result.push(system.hostName);
+  if (r || a) result.push(system.kernelVersion);
+  if (m || a) result.push(system.architecture);
 
   return result.join(" ");
 }

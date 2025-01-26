@@ -43,21 +43,37 @@ export function getPathFromCommand(command: string, path: string[]) {
   return newPath;
 }
 
+function getCurrentArg(command: string, cursorPos: number) {
+  let start = cursorPos;
+  while (start > 0 && command[start - 1] !== " ") {
+    start--;
+  }
+
+  let end = cursorPos;
+  while (end < command.length && command[end] !== " ") {
+    end++;
+  }
+
+  const word = command.slice(start, end);
+
+  return word;
+}
+
 export function autoComplete(
   command: string,
   path: string[],
-  cursorPos: number
+  cursorPos: number,
 ) {
   const parts = command.split(" ");
   const currentCommand = parts[0];
-  const currentArg = parts.slice(1).join(" ");
+  const currentArg = getCurrentArg(command, cursorPos);
 
   const root = store.getState().fileSystem.root as Folder;
   const binaries = findFolder(root, ["bin"])?.files.map(
-    (binary) => binary.name
+    (binary) => binary.name,
   );
   const filesInPath = findFolder(root, path)?.files.map(
-    (binary) => binary.name
+    (binary) => binary.name,
   );
 
   const suggestions =
@@ -83,7 +99,7 @@ export function autoComplete(
 export function autoCompletePath(
   command: string,
   path: string[],
-  showOnlyFolders: boolean
+  showOnlyFolders: boolean,
 ) {
   const fullPath = command.startsWith("/") ? [] : [...path];
   const partialParts = command.split("/").filter((part) => part !== "");
@@ -112,7 +128,7 @@ export function autoCompletePath(
     .filter(
       (file) =>
         file.name.startsWith(prefix) &&
-        (!showOnlyFolders || file.type === "folder")
+        (!showOnlyFolders || file.type === "folder"),
     )
     .map(
       (file) =>
@@ -120,7 +136,7 @@ export function autoCompletePath(
           command.startsWith("/") && !historyPrefix ? "/" : ""
         }${historyPrefix}${historyPrefix ? "/" : ""}${file.name}${
           file.type === "folder" ? "/" : ""
-        }`
+        }`,
     );
 
   if (command.endsWith(".")) fileNames.push(`${command}/`);

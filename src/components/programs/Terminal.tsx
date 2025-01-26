@@ -79,7 +79,7 @@ export const Terminal: FC<TerminalProps> = ({
           } else if (command === "clear") {
             prevHistory = [];
           } else if (command === "exit") {
-            kill({ path: [], params: { proccessId: uid } });
+            kill({ path: [], params: { processId: uid } });
           } else {
             const response = executeBinary(
               ["bin"],
@@ -360,8 +360,7 @@ export const Terminal: FC<TerminalProps> = ({
                 { name: "Configuration" },
                 {
                   name: "Exit",
-                  onClick: () =>
-                    kill({ path: [], params: { proccessId: uid } }),
+                  onClick: () => kill({ path: [], params: { processId: uid } }),
                 },
               ],
             },

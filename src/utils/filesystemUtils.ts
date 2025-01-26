@@ -113,7 +113,27 @@ export function isValidFileMove(sourcePath: string[], targetPath: string[]) {
   return true;
 }
 
-export function isValidPath(path: string): boolean {
-  const pathRegex = /^\/([a-zA-Z0-9._-]+\/?)*$/;
-  return pathRegex.test(path);
+export function toAbsolutePath(currentPath: string[], filePath: string) {
+  const isValidPath = /^(\.\/|\.\.\/|\/)?([a-zA-Z0-9._-]+\/?)*$/.test(filePath);
+
+  if (!isValidPath) {
+    throw new Error(`Invalid path`);
+  }
+
+  if (filePath.startsWith("/")) {
+    return filePath.split("/").filter(Boolean);
+  }
+
+  const fileSegments = filePath.split("/");
+  const currentPathClone = [...currentPath];
+
+  for (const segment of fileSegments) {
+    if (segment === "..") {
+      currentPathClone.pop();
+    } else if (segment !== ".") {
+      currentPathClone.push(segment);
+    }
+  }
+
+  return currentPathClone.filter(Boolean);
 }

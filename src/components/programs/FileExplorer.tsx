@@ -89,7 +89,7 @@ const FileEntry: FC<FileEntryProps> = ({
         e.dataTransfer.setDragImage(copy as HTMLDivElement, 0, 0);
       }
     },
-    [file, path]
+    [file, path],
   );
 
   const handleDragEnd = () => {
@@ -107,7 +107,7 @@ const FileEntry: FC<FileEntryProps> = ({
       if (file.type !== "folder") return;
 
       const { file: draggedFile, path: draggedFilePath } = JSON.parse(
-        e.dataTransfer.getData("file")
+        e.dataTransfer.getData("file"),
       ) as { file?: GeneralFile; path?: string[] };
 
       if (
@@ -116,7 +116,7 @@ const FileEntry: FC<FileEntryProps> = ({
         draggedFilePath &&
         isValidFileMove(
           [...draggedFilePath, draggedFile.name],
-          [...path, file.name]
+          [...path, file.name],
         )
       ) {
         mv({
@@ -133,7 +133,7 @@ const FileEntry: FC<FileEntryProps> = ({
 
       e.dataTransfer.clearData();
     },
-    [file, path]
+    [file, path],
   );
 
   const handleDragFileOver = useCallback(
@@ -142,7 +142,7 @@ const FileEntry: FC<FileEntryProps> = ({
       if (file.type !== "folder") return;
 
       const draggedFilePath = e.dataTransfer.types.find((type) =>
-        type.startsWith("filepath-")
+        type.startsWith("filepath-"),
       );
 
       if (draggedFilePath) {
@@ -155,7 +155,7 @@ const FileEntry: FC<FileEntryProps> = ({
 
       setIsDraggingOver(true);
     },
-    [file, path]
+    [file, path],
   );
 
   const handleDragFileLeave = useCallback(
@@ -165,7 +165,7 @@ const FileEntry: FC<FileEntryProps> = ({
       if (!e.currentTarget.contains(e.relatedTarget as HTMLDivElement))
         setIsDraggingOver(false);
     },
-    [file.type]
+    [file.type],
   );
 
   return (
@@ -184,7 +184,7 @@ const FileEntry: FC<FileEntryProps> = ({
                 outline: "1px dotted black",
               }
             : undefined,
-        [isDraggingOver]
+        [isDraggingOver],
       )}
       onDragLeave={handleDragFileLeave}
       ref={fileEntryRef}
@@ -216,7 +216,7 @@ const FileEntryForm: FC<FileEntryFormProps> = ({
   ignoreBlurEvent = false,
 }) => {
   const [name, setName] = useState(
-    type === "folder" ? "New folder" : "New file"
+    type === "folder" ? "New folder" : "New file",
   );
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -254,18 +254,18 @@ const FileEntryForm: FC<FileEntryFormProps> = ({
         value={name}
         onChange={useCallback(
           (e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value),
-          []
+          [],
         )}
         onBlur={useCallback(
           () => !ignoreBlurEvent && onSubmit(name, false),
-          [ignoreBlurEvent, name, onSubmit]
+          [ignoreBlurEvent, name, onSubmit],
         )}
         onKeyDown={useCallback(
           (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === "Enter") onSubmit(name, false);
             if (e.key === "Escape") onSubmit("", false);
           },
-          [name, onSubmit]
+          [name, onSubmit],
         )}
         className="file-name"
       />
@@ -292,7 +292,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 }) => {
   const [path, setPath] = useState(startingPath);
   const [pathInputValue, setPathInputValue] = useState(
-    `/${startingPath.join("/")}`
+    `/${startingPath.join("/")}`,
   );
   const [cutFiles, setCutFiles] = useState<string[]>([]);
   const [showHiddenFiles, setShowHiddenFiles] = useState(false);
@@ -304,11 +304,11 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   const [renamingFileName, setRenamingFileName] = useState<string>();
   const [renamingFileError, setRenamingFileError] = useState<string>();
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
-    null
+    null,
   );
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const { copiedValue, setForDeletion } = useSelector(
-    (state: RootState) => state.clipboard
+    (state: RootState) => state.clipboard,
   );
   const [creatingFileType, setCreatingFileType] = useState<"folder" | "file">();
   const [mainDivSize, setMainDivSize] = useState<{
@@ -317,18 +317,18 @@ export const FileExplorer: FC<FileExplorerProps> = ({
   }>();
   const currentDirectory = useMemo(
     () => findFolder(root as Folder, path),
-    [path, root]
+    [path, root],
   );
   const currFiles = useMemo(
     () =>
       currentDirectory?.files.filter(
-        (file) => showHiddenFiles || !file.name.startsWith(".")
+        (file) => showHiddenFiles || !file.name.startsWith("."),
       ) ?? [],
-    [currentDirectory?.files, showHiddenFiles]
+    [currentDirectory?.files, showHiddenFiles],
   );
   const renamingFile = useMemo(
     () => currFiles.find((file) => file.name === renamingFileName),
-    [currFiles, renamingFileName]
+    [currFiles, renamingFileName],
   );
   const fileListRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -377,7 +377,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 
   const onChangePathInputValue = useCallback(
     (value: string[]) => setPathInputValue(`/${value.join("/")}`),
-    []
+    [],
   );
 
   const updatePath = useCallback(
@@ -387,7 +387,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
       setBackStack((prevBackStack) => [...prevBackStack, path]);
       setForwardStack([]);
     },
-    [onChangePathInputValue, path]
+    [onChangePathInputValue, path],
   );
 
   const handleSelectFiles = useCallback(
@@ -411,13 +411,13 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         const end = Math.max(lastSelectedIndex, index);
         const range = currFiles.slice(start, end + 1).map((file) => file.name);
         setSelectedFiles((prevSelected) =>
-          Array.from(new Set([...prevSelected, ...(range ?? [])]))
+          Array.from(new Set([...prevSelected, ...(range ?? [])])),
         );
       } else if (event.ctrlKey || event.metaKey) {
         setSelectedFiles((prevSelected) =>
           prevSelected.includes(fileName)
             ? prevSelected.filter((id) => id !== fileName)
-            : [...prevSelected, fileName]
+            : [...prevSelected, fileName],
         );
         setLastSelectedIndex(index);
       } else {
@@ -425,7 +425,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         setLastSelectedIndex(index);
       }
     },
-    [currFiles, lastSelectedIndex, path, updatePath]
+    [currFiles, lastSelectedIndex, path, updatePath],
   );
 
   const handleGoBack = useCallback(() => {
@@ -459,7 +459,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
     if (
       findFolder(
         root as Folder,
-        finalInputPath.filter((pathSlice) => pathSlice.length)
+        finalInputPath.filter((pathSlice) => pathSlice.length),
       ) === null
     )
       return;
@@ -490,21 +490,21 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 
       setCreatingFileType(undefined);
     },
-    [creatingFileType, currentDirectory, path]
+    [creatingFileType, currentDirectory, path],
   );
 
   const handleShowAboutModal = useCallback(
     () => setAboutModalVisible(true),
-    []
+    [],
   );
   const handleCloseAboutModal = useCallback(
     () => setAboutModalVisible(false),
-    []
+    [],
   );
 
   const handleCloseRenameModal = useCallback(
     () => setRenamingFileName(undefined),
-    []
+    [],
   );
 
   const handleRenameFile = useCallback(
@@ -525,19 +525,19 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         setRenamingFileError(`${e}`);
       }
     },
-    [currFiles, handleCloseRenameModal, path, renamingFileName]
+    [currFiles, handleCloseRenameModal, path, renamingFileName],
   );
 
   const handleCloseErrorModal = useCallback(
     () => setRenamingFileError(undefined),
-    []
+    [],
   );
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       const { file, path: oldPath } = JSON.parse(
-        e.dataTransfer.getData("file")
+        e.dataTransfer.getData("file"),
       ) as { file?: GeneralFile; path?: string[] };
 
       if (
@@ -557,7 +557,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
 
       e.dataTransfer.clearData();
     },
-    [currFiles, path]
+    [currFiles, path],
   );
 
   return (
@@ -579,8 +579,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                 { name: "Open terminal" },
                 {
                   name: "Exit",
-                  onClick: () =>
-                    kill({ path: [], params: { proccessId: uid } }),
+                  onClick: () => kill({ path: [], params: { processId: uid } }),
                 },
               ],
             },
@@ -603,8 +602,8 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                       copy(
                         selectedFiles
                           .map((file) => path.join("/") + "/" + file)
-                          .join(",")
-                      )
+                          .join(","),
+                      ),
                     );
                   },
                 },
@@ -617,7 +616,8 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                         .map((fileText) => fileText.split("/").filter(Boolean));
 
                       const differentPathFiles = files.filter(
-                        (file) => file.slice(0, -1).join("/") !== path.join("/")
+                        (file) =>
+                          file.slice(0, -1).join("/") !== path.join("/"),
                       );
 
                       for (const file of setForDeletion
@@ -652,7 +652,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
                   name: "Cut",
                   onClick: () => {
                     const files = selectedFiles.map(
-                      (file) => path.join("/") + "/" + file
+                      (file) => path.join("/") + "/" + file,
                     );
 
                     setCutFiles(files);
@@ -724,7 +724,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
             setForDeletion,
             showHiddenFiles,
             uid,
-          ]
+          ],
         )}
       />
       <div className="navigation-bar">
@@ -741,7 +741,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         <button
           onClick={useCallback(
             () => updatePath(path.slice(0, -1)),
-            [path, updatePath]
+            [path, updatePath],
           )}
         >
           <img className="icon go-up" src={arrowIcon} alt="Go up icon" />
@@ -758,13 +758,13 @@ export const FileExplorer: FC<FileExplorerProps> = ({
           onChange={useCallback(
             (e: React.ChangeEvent<HTMLInputElement>) =>
               setPathInputValue(e.target.value),
-            []
+            [],
           )}
           onKeyDown={useCallback(
             (e: React.KeyboardEvent) => {
               if (e.key === "Enter") handleInputSubmit();
             },
-            [handleInputSubmit]
+            [handleInputSubmit],
           )}
         />
         <button>
@@ -781,7 +781,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
         ref={contentRef}
         onDragOver={useCallback(
           (e: React.DragEvent<HTMLDivElement>) => e.preventDefault(),
-          []
+          [],
         )}
         onDrop={handleDrop}
       >
@@ -793,7 +793,7 @@ export const FileExplorer: FC<FileExplorerProps> = ({
               key={shortcut.name}
               onClick={() =>
                 updatePath(
-                  shortcut.path ? shortcut.path : [...HOME_PATH, shortcut.name]
+                  shortcut.path ? shortcut.path : [...HOME_PATH, shortcut.name],
                 )
               }
             />
