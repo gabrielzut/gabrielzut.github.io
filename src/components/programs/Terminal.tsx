@@ -15,11 +15,10 @@ import {
   autoComplete,
   getPathFromCommand,
   printShellInfo,
+  splitIgnoringQuotes,
 } from "../../utils/shellUtils";
 import { GenerateUUID } from "../../utils/generators";
 import { findFileOrFolder } from "../../utils/filesystemUtils";
-import { useSelector } from "react-redux";
-import { RootState } from "../../redux";
 
 interface TerminalProps {
   uid: string;
@@ -39,11 +38,26 @@ export const Terminal: FC<TerminalProps> = ({
 }) => {
   const [isSu, setIsSu] = useState(false);
   const [path, setPath] = useState(HOME_PATH);
-  const root = useSelector((state: RootState) => state.fileSystem.root);
   const terminalInputRef = useRef<HTMLSpanElement>(null);
   const [terminalHistory, setTerminalHistory] = useState<ReactNode[]>([]);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [suCommandHistory, setSuCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  const updateCommandHistory = useCallback(
+    (text: string) => {
+      (isSu ? setSuCommandHistory : setCommandHistory)((prevCommandHistory) => [
+        ...prevCommandHistory,
+        text,
+      ]);
+    },
+    [isSu],
+  );
+
+  const currCommandHistory = useMemo(
+    () => (isSu ? suCommandHistory : commandHistory),
+    [commandHistory, isSu, suCommandHistory],
+  );
 
   const execute = useCallback(
     (text?: string) => {
@@ -55,7 +69,7 @@ export const Terminal: FC<TerminalProps> = ({
         prevHistory.push(text);
 
         try {
-          const params = text.includes(" ") ? text.split(" ") : [];
+          const params = text.includes(" ") ? splitIgnoringQuotes(text) : [];
           const command = text.split(" ")[0];
 
           if (command === "cd") {
@@ -79,7 +93,13 @@ export const Terminal: FC<TerminalProps> = ({
           } else if (command === "clear") {
             prevHistory = [];
           } else if (command === "exit") {
-            kill({ path: [], params: { processId: uid } });
+            if (isSu) {
+              setIsSu(false);
+            } else {
+              kill({ path: [], params: { processId: uid } });
+            }
+          } else if (command === "sudo" && params[1] === "su") {
+            setIsSu(true);
           } else {
             const response = executeBinary(
               ["bin"],
@@ -103,17 +123,13 @@ export const Terminal: FC<TerminalProps> = ({
         }
       }
 
-      text &&
-        setCommandHistory((prevCommandHistory) => [
-          ...prevCommandHistory,
-          text,
-        ]);
+      text && updateCommandHistory(text);
       setTerminalHistory([
         ...prevHistory,
         ...(text !== "clear" ? [<br key={GenerateUUID()} />] : []),
       ]);
     },
-    [isSu, path, terminalHistory, uid],
+    [isSu, path, terminalHistory, uid, updateCommandHistory],
   );
 
   const focusTextNode = useCallback(() => {
@@ -252,20 +268,21 @@ export const Terminal: FC<TerminalProps> = ({
         e.preventDefault();
 
         let index =
-          historyIndex < commandHistory.length
+          historyIndex < currCommandHistory.length
             ? historyIndex + 1
-            : commandHistory.length - 1;
+            : currCommandHistory.length - 1;
 
         setHistoryIndex(index);
 
         if (!text) {
           (e.target as HTMLSpanElement).appendChild(
             document.createTextNode(
-              commandHistory[commandHistory.length - index],
+              currCommandHistory[currCommandHistory.length - index],
             ),
           );
         } else {
-          text.textContent = commandHistory[commandHistory.length - index];
+          text.textContent =
+            currCommandHistory[currCommandHistory.length - index];
         }
       }
 
@@ -279,11 +296,12 @@ export const Terminal: FC<TerminalProps> = ({
         if (!text) {
           (e.target as HTMLSpanElement).appendChild(
             document.createTextNode(
-              commandHistory[commandHistory.length - index],
+              currCommandHistory[currCommandHistory.length - index],
             ),
           );
         } else {
-          text.textContent = commandHistory[commandHistory.length - index];
+          text.textContent =
+            currCommandHistory[currCommandHistory.length - index];
         }
       }
 
@@ -332,7 +350,7 @@ export const Terminal: FC<TerminalProps> = ({
       }
     },
     [
-      commandHistory,
+      currCommandHistory,
       ensureCursorAfterShellInfo,
       execute,
       getCursorPosition,

@@ -114,7 +114,9 @@ export function isValidFileMove(sourcePath: string[], targetPath: string[]) {
 }
 
 export function toAbsolutePath(currentPath: string[], filePath: string) {
-  const isValidPath = /^(\.\/|\.\.\/|\/)?([a-zA-Z0-9._-]+\/?)*$/.test(filePath);
+  const isValidPath = /^(\.\/|\.\.\/|\/)?([a-zA-Z0-9._-\s]+\/?)*$/.test(
+    filePath,
+  );
 
   if (!isValidPath) {
     throw new Error(`Invalid path`);

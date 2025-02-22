@@ -40,7 +40,7 @@ export class Program<T extends React.FC<any>> {
       entry.minWidth,
       entry.minHeight,
       false,
-      entry.props
+      entry.props,
     );
   }
 
@@ -60,7 +60,7 @@ export class Program<T extends React.FC<any>> {
     minWidth = 200,
     minHeight = 200,
     isSystemOwned = false,
-    props?: React.ComponentProps<T>
+    props?: React.ComponentProps<T>,
   ) {
     this.id = id;
     this.name = name;

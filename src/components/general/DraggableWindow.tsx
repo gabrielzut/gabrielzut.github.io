@@ -32,7 +32,6 @@ interface DraggableWindowProps {
   icon?: string;
   minWidth?: number;
   minHeight?: number;
-  childProps?: { [key: string]: any };
 }
 
 interface WindowTitleButtonProps {
@@ -74,7 +73,6 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
   icon,
   minWidth = 200,
   minHeight = 200,
-  childProps = {},
 }) => {
   const [position, setPosition] = useState({
     x: defaultX,
@@ -91,13 +89,13 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
   const [isMaximized, setIsMaximized] = useState(defaultMaximized);
   const dispatch = useDispatch();
   const currentZIndex = useSelector(
-    (state: RootState) => state.processManager.currentZIndex
+    (state: RootState) => state.processManager.currentZIndex,
   );
   const firstRender = useRef(true);
   const [zIndex, setZIndex] = useState(currentZIndex);
   const isActiveWindow = useMemo(
     () => zIndex === currentZIndex - 1,
-    [currentZIndex, zIndex]
+    [currentZIndex, zIndex],
   );
   const wasMinimized = useRef(false);
 
@@ -135,7 +133,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
         y: event.clientY - position.y,
       });
     },
-    [position]
+    [position],
   );
 
   const handleMouseMove = useCallback(
@@ -178,7 +176,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
       position,
       resizeDirection,
       size,
-    ]
+    ],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -192,7 +190,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
       setIsResizing(true);
       setResizeDirection(direction);
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -228,6 +226,22 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
       dispatch(incrementZIndex());
     }
   }, [currentZIndex, dispatch, isActiveWindow]);
+
+  const mappedChildren = useMemo(
+    () =>
+      React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement<any>(child, {
+            uid: windowId,
+            size: isMaximized
+              ? { width: window.innerWidth, height: window.innerHeight - 42 }
+              : size,
+          });
+        }
+        return child;
+      }),
+    [children, isMaximized, size, windowId],
+  );
 
   return (
     <div
@@ -278,23 +292,12 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
           />
         </div>
       </div>
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement<any>(child, {
-            ...childProps,
-            uid: windowId,
-            size: isMaximized
-              ? { width: window.innerWidth, height: window.innerHeight - 42 }
-              : size,
-          });
-        }
-        return child;
-      })}
+      {mappedChildren}
       <div
         onMouseDown={useCallback(
           (e: React.MouseEvent<HTMLDivElement>) =>
             handleResizeStart(e, "right"),
-          [handleResizeStart]
+          [handleResizeStart],
         )}
         className="draggable-right"
       />
@@ -302,7 +305,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
         onMouseDown={useCallback(
           (e: React.MouseEvent<HTMLDivElement>) =>
             handleResizeStart(e, "bottom"),
-          [handleResizeStart]
+          [handleResizeStart],
         )}
         className="draggable-bottom"
       />
@@ -310,7 +313,7 @@ const DraggableWindow: React.FC<DraggableWindowProps> = ({
         onMouseDown={useCallback(
           (e: React.MouseEvent<HTMLDivElement>) =>
             handleResizeStart(e, "bottom-right"),
-          [handleResizeStart]
+          [handleResizeStart],
         )}
         className="draggable-bottom-right"
       />

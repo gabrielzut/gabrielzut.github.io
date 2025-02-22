@@ -132,14 +132,22 @@ export function autoCompletePath(
     )
     .map(
       (file) =>
-        `${
+        `${file.name.includes(" ") ? '"' : ""}${
           command.startsWith("/") && !historyPrefix ? "/" : ""
         }${historyPrefix}${historyPrefix ? "/" : ""}${file.name}${
           file.type === "folder" ? "/" : ""
-        }`,
+        }${file.name.includes(" ") ? '"' : ""}`,
     );
 
   if (command.endsWith(".")) fileNames.push(`${command}/`);
 
   return fileNames;
+}
+
+export function splitIgnoringQuotes(input: string): string[] {
+  const regex = /(["'`])([^]*?)\1|\S+/g;
+  return (
+    input.match(regex)?.map((match) => match.replace(/^["'`]|["'`]$/g, "")) ||
+    []
+  );
 }
