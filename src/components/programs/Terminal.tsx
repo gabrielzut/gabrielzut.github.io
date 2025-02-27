@@ -254,10 +254,17 @@ export const Terminal: FC<TerminalProps> = ({
     (e: React.KeyboardEvent) => {
       ensureCursorAfterShellInfo();
 
-      let text =
-        (e.target as HTMLSpanElement).childNodes.length > 1
-          ? (e.target as HTMLSpanElement).childNodes[1]
-          : undefined;
+      let text: ChildNode | undefined = undefined;
+
+      const childNodes = (e.target as HTMLSpanElement).childNodes;
+      if (childNodes.length > 1) {
+        for (let i = 1; i < childNodes.length; i++) {
+          if (childNodes.item(i).textContent) {
+            text = childNodes.item(i);
+            break;
+          }
+        }
+      }
 
       if (e.key === "l" && e.ctrlKey) {
         execute("clear");
