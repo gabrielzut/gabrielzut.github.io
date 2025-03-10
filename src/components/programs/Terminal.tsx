@@ -14,7 +14,9 @@ import terminalIcon from "../../assets/img/terminal.gif";
 import {
   autoComplete,
   getPathFromCommand,
+  handleExportEnv,
   printShellInfo,
+  replaceEnvs,
   splitIgnoringQuotes,
 } from "../../utils/shellUtils";
 import { GenerateUUID } from "../../utils/generators";
@@ -40,7 +42,7 @@ export const Terminal: FC<TerminalProps> = ({
   const [path, setPath] = useState(HOME_PATH);
   const terminalInputRef = useRef<HTMLSpanElement>(null);
   const [terminalHistory, setTerminalHistory] = useState<ReactNode[]>([]);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [commandHistory, setCommandHistory] = useState<string[]>([""]);
   const [suCommandHistory, setSuCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -69,8 +71,10 @@ export const Terminal: FC<TerminalProps> = ({
         prevHistory.push(text);
 
         try {
-          const params = text.includes(" ") ? splitIgnoringQuotes(text) : [];
-          const command = text.split(" ")[0];
+          const params = text.includes(" ")
+            ? splitIgnoringQuotes(text).map(replaceEnvs)
+            : [];
+          const command = replaceEnvs(text.split(" ")[0]).trim();
 
           if (command === "cd") {
             if (params.length) {
@@ -100,6 +104,10 @@ export const Terminal: FC<TerminalProps> = ({
             }
           } else if (command === "sudo" && params[1] === "su") {
             setIsSu(true);
+          } else if (command === "export") {
+            for (const param of params) {
+              handleExportEnv(param);
+            }
           } else {
             const response = executeBinary(
               ["bin"],
@@ -257,9 +265,10 @@ export const Terminal: FC<TerminalProps> = ({
       let text: ChildNode | undefined = undefined;
 
       const childNodes = (e.target as HTMLSpanElement).childNodes;
+
       if (childNodes.length > 1) {
         for (let i = 1; i < childNodes.length; i++) {
-          if (childNodes.item(i).textContent) {
+          if (childNodes.item(i).textContent !== undefined) {
             text = childNodes.item(i);
             break;
           }
@@ -274,10 +283,12 @@ export const Terminal: FC<TerminalProps> = ({
       if (e.key === "ArrowUp") {
         e.preventDefault();
 
-        let index =
+        let index = Math.max(
           historyIndex < currCommandHistory.length
             ? historyIndex + 1
-            : currCommandHistory.length - 1;
+            : currCommandHistory.length - 1,
+          0,
+        );
 
         setHistoryIndex(index);
 
@@ -303,12 +314,12 @@ export const Terminal: FC<TerminalProps> = ({
         if (!text) {
           (e.target as HTMLSpanElement).appendChild(
             document.createTextNode(
-              currCommandHistory[currCommandHistory.length - index],
+              currCommandHistory[currCommandHistory.length - index] ?? "",
             ),
           );
         } else {
           text.textContent =
-            currCommandHistory[currCommandHistory.length - index];
+            currCommandHistory[currCommandHistory.length - index] ?? "";
         }
       }
 

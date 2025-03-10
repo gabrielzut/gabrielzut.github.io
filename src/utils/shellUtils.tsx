@@ -2,6 +2,7 @@ import { Folder } from "../model/file";
 import { store } from "../redux";
 import { findFolder } from "./filesystemUtils";
 import { GenerateUUID } from "./generators";
+import { getEnv, getItem, setEnv } from "./localStorage";
 
 export function printShellInfo(isSu: boolean, path: string[]) {
   const pathString = "/" + path.join("/");
@@ -68,24 +69,25 @@ export function autoComplete(
   const currentCommand = parts[0];
   const currentArg = getCurrentArg(command, cursorPos);
 
-  const root = store.getState().fileSystem.root as Folder;
-  const binaries = findFolder(root, ["bin"])?.files.map(
-    (binary) => binary.name,
-  );
-  const filesInPath = findFolder(root, path)?.files.map(
-    (binary) => binary.name,
-  );
+  const pathEnv = getEnv("PATH");
+  const pathsFromEnv = pathEnv.split(":");
 
   const suggestions =
-    cursorPos <= currentCommand.length
+    cursorPos <= currentCommand.length &&
+    !currentCommand[0].startsWith(".") &&
+    !currentCommand[0].startsWith("/")
       ? [
-          ...new Set([
-            ...(binaries ?? []),
-            ...(filesInPath ?? []),
-            "cd",
-            "clear",
-          ]),
-        ].filter((cmd) => cmd.startsWith(currentCommand))
+          ...pathsFromEnv.flatMap((pathFromEnv) =>
+            autoCompletePath(
+              currentArg,
+              pathFromEnv.split("/").filter(Boolean),
+              currentCommand === "cd",
+            ),
+          ),
+          ...["cd", "clear", "export", "sudo"].filter((cmd) =>
+            cmd.startsWith(currentCommand),
+          ),
+        ]
       : autoCompletePath(currentArg, path, currentCommand === "cd");
 
   return {
@@ -94,6 +96,14 @@ export function autoComplete(
       cursorPos <= currentCommand.length ? currentCommand : currentArg,
     isCommand: cursorPos <= currentCommand.length,
   };
+}
+
+export function replaceEnvs(string: string) {
+  const envs = getItem("envs");
+
+  return string.replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, varName) => {
+    return (envs ?? { [varName]: "" })[varName] || "";
+  });
 }
 
 export function autoCompletePath(
@@ -150,4 +160,9 @@ export function splitIgnoringQuotes(input: string): string[] {
     input.match(regex)?.map((match) => match.replace(/^["'`]|["'`]$/g, "")) ||
     []
   );
+}
+
+export function handleExportEnv(envWithValue: string): void {
+  const [key, value] = envWithValue.split("=");
+  setEnv(key, value);
 }

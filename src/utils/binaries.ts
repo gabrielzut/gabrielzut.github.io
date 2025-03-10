@@ -125,8 +125,7 @@ export function mkdir({
         name = fileParam.slice(-1)[0];
         filePath = fileParam.slice(0, -1);
       }
-    } catch (e) {
-      console.log(e);
+    } catch {
       throw new Error("mkdir: Invalid file name/path.");
     }
   } else {
