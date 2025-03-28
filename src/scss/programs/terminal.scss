@@ -1,8 +1,12 @@
 .terminal {
+    display: flex;
+    flex-direction: column;
+
     &-container {
         background-color: #282828;
         width: 100%;
         overflow-y: auto;
+        flex: 1;
         vertical-align: bottom;
         line-height: 20px;
     }
