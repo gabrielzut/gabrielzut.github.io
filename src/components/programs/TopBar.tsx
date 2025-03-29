@@ -72,13 +72,13 @@ function newMenu() {
     mainMenuProgramEntry.icon,
     false,
     mainMenuProgramEntry.defaultWidth,
-    mainMenuProgramEntry.defaultHeight
+    mainMenuProgramEntry.defaultHeight,
   );
 }
 
 export const TopBarClock: FC<{}> = () => {
   const [dateAndTime, setDateAndTime] = useState(
-    new Date().toLocaleTimeString()
+    new Date().toLocaleTimeString(),
   );
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export const TopBarClock: FC<{}> = () => {
 
 export const TopBar: FC<TopBarProps> = () => {
   const openedPrograms = useSelector(
-    (state: RootState) => state.processManager.programs
+    (state: RootState) => state.processManager.programs,
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const [showArrows, setShowArrows] = useState(false);
@@ -152,8 +152,6 @@ export const TopBar: FC<TopBarProps> = () => {
     };
   }, [checkOverflow]);
 
-  useEffect(() => {}, []);
-
   return (
     <div className="top-bar">
       <div className="left">
@@ -161,7 +159,7 @@ export const TopBar: FC<TopBarProps> = () => {
           className="start-button"
           onClick={useCallback(() => {
             const id = openedPrograms.find(
-              (program) => program.name === "mainMenu"
+              (program) => program.name === "mainMenu",
             )?.id;
             if (id) {
               dispatch(closeProgram(id));

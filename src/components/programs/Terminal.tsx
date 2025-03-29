@@ -1,9 +1,13 @@
-import { FC, useMemo } from "react";
+import { FC, useCallback, useMemo, useState } from "react";
 import { WindowOptions } from "../general/WindowOption";
-import { kill } from "../../utils/binaries";
+import { executeBinary, kill } from "../../utils/binaries";
 import { ProgramEntry } from ".";
 import terminalIcon from "../../assets/img/terminal.gif";
 import { GenericTerminalEmulator } from "../general/GenericTerminalEmulator";
+import { Tab, Tabs } from "./Tabs";
+import { useEffect } from "react";
+import { AboutContent } from "../general/AboutContent";
+import { Modal } from "../general/Modal";
 
 interface TerminalProps {
   uid: string;
@@ -15,6 +19,55 @@ interface TerminalProps {
 }
 
 export const Terminal: FC<TerminalProps> = ({ uid, size }) => {
+  const [tabs, setTabs] = useState<Tab[]>([
+    {
+      title: "1",
+      content: <GenericTerminalEmulator onKill={() => closeTab("tab-1")} />,
+      key: "tab-1",
+    },
+  ]);
+  const [tabCount, setTabCount] = useState(1);
+  const [aboutModalVisible, setAboutModalVisible] = useState(false);
+  const handleShowAboutModal = useCallback(
+    () => setAboutModalVisible(true),
+    [],
+  );
+  const handleCloseAboutModal = useCallback(
+    () => setAboutModalVisible(false),
+    [],
+  );
+
+  const handleExitProgram = useCallback(
+    () => kill({ path: [], params: { processId: uid } }),
+    [uid],
+  );
+
+  useEffect(() => {
+    if (tabs.length === 0) handleExitProgram();
+  }, [handleExitProgram, tabs.length]);
+
+  const closeTab = useCallback((keyToClose: string) => {
+    setTabs((prevTabs) => prevTabs.filter((tab) => tab.key !== keyToClose));
+  }, []);
+
+  const onAddTab = useCallback(() => {
+    const key = `tab-${tabCount + 1}`;
+
+    setTabs((prevTabs) => [
+      ...prevTabs,
+      {
+        title: `${tabCount + 1}`,
+        content: <GenericTerminalEmulator onKill={() => closeTab(key)} />,
+        key,
+      },
+    ]);
+    setTabCount(tabCount + 1);
+  }, [closeTab, tabCount]);
+
+  const handleOpenNewInstance = useCallback(() => {
+    executeBinary(["bin"], "terminal");
+  }, []);
+
   return (
     <div className="terminal" style={{ height: size.height - 24 }}>
       <WindowOptions
@@ -25,22 +78,50 @@ export const Terminal: FC<TerminalProps> = ({ uid, size }) => {
               dropdownOptions: [
                 {
                   name: "New tab",
+                  onClick: onAddTab,
                 },
                 {
                   name: "New window",
+                  onClick: handleOpenNewInstance,
                 },
-                { name: "Configuration" },
                 {
                   name: "Exit",
-                  onClick: () => kill({ path: [], params: { processId: uid } }),
+                  onClick: handleExitProgram,
+                },
+              ],
+            },
+            {
+              name: "Help",
+              dropdownOptions: [
+                {
+                  name: "About",
+                  onClick: handleShowAboutModal,
                 },
               ],
             },
           ],
-          [uid],
+          [
+            handleExitProgram,
+            handleOpenNewInstance,
+            handleShowAboutModal,
+            onAddTab,
+          ],
         )}
       />
-      <GenericTerminalEmulator onKill={() => {}} />
+      <Tabs tabs={tabs} />
+      <Modal
+        title="About Terminal"
+        content={
+          <AboutContent
+            title="ZutiOS Terminal"
+            version="0.0.1"
+            description="This is a simple terminal emulator for the web."
+          />
+        }
+        visible={aboutModalVisible}
+        onClose={handleCloseAboutModal}
+        parentSize={{ width: size.width, height: size.height - 2 }}
+      />
     </div>
   );
 };

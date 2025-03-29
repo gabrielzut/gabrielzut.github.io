@@ -1,0 +1,40 @@
+.tabs {
+    &-wrapper {
+        height: 24px;
+        display: flex;
+
+        & > button {
+            flex: 1;
+            border: none;
+            padding: 0 10px;
+            box-shadow:
+                inset 2px 2px rgb(80, 80, 80),
+                inset -2px -2px rgb(192, 192, 192);
+            background-color: rgba(180, 180, 180, 1);
+
+            &:active,
+            &.inactive {
+                box-shadow:
+                    inset 2px 2px rgb(192, 192, 192),
+                    inset -2px -2px rgb(80, 80, 80);
+                background-color: rgb(170, 170, 170);
+            }
+
+            &.active {
+                box-shadow:
+                    inset 2px 2px rgb(80, 80, 80),
+                    inset -2px -2px rgb(192, 192, 192);
+                background-color: rgba(180, 180, 180, 1);
+            }
+        }
+    }
+    &-content-container {
+        height: 100%;
+        position: relative;
+
+        & > div {
+            height: 100%;
+            display: flex;
+        }
+    }
+}
