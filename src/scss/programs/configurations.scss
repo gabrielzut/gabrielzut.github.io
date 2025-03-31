@@ -1,0 +1,23 @@
+.configurations {
+    height: 100%;
+    display: flex;
+}
+
+.option-entry {
+    height: 48px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: none;
+    background-color: transparent;
+
+    &:hover {
+        color: rgb(9, 9, 121);
+        cursor: pointer;
+    }
+
+    .icon {
+        margin-right: 5px;
+    }
+}

@@ -12,6 +12,9 @@ export const Kernel: FC<KernelProps> = (props) => {
     if (!getEnv("PATH")) {
       setEnv("PATH", "/bin");
     }
+    if (!getEnv("HOME")) {
+      setEnv("HOME", "/home/user");
+    }
   }, []);
 
   return (

@@ -5,7 +5,7 @@ import { TopBar } from "../../components/programs/TopBar";
 import React from "react";
 import { VolumeTrayIcon } from "../../components/programs/VolumeTrayIcon";
 import { warnProgramEntry } from "../../components/programs/MessageWindow";
-import { terminalEntry } from "../../components/programs/Terminal";
+import { configurationsEntry } from "../../components/programs/Configurations";
 
 export interface ProcessManagerState {
   programs: Program<any>[];
@@ -29,7 +29,7 @@ const initialState: ProcessManagerState = {
       undefined,
       undefined,
       undefined,
-      true
+      true,
     ),
     new Program(
       GenerateUUID(),
@@ -46,9 +46,9 @@ const initialState: ProcessManagerState = {
       undefined,
       undefined,
       undefined,
-      true
+      true,
     ),
-    Program.of(terminalEntry),
+    Program.of(configurationsEntry),
     Program.of({
       ...warnProgramEntry,
       props: { text: "Under construction!", type: "warn" },
@@ -66,7 +66,7 @@ export const processManagerSlice = createSlice({
     },
     closeProgram: (state, action: PayloadAction<string>) => {
       state.programs = state.programs.filter(
-        (program) => program.id !== action.payload
+        (program) => program.id !== action.payload,
       );
     },
     minimizeProgram: (state, action: PayloadAction<string>) => {
